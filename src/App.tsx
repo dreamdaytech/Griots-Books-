@@ -35,7 +35,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
   if (!authReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] dark:bg-[#0B1220] text-sm text-slate-600 dark:text-slate-300">
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F3EE] dark:bg-[#16110C] text-sm text-slate-600 dark:text-slate-300">
         Loading workspace...
       </div>
     );
@@ -52,8 +52,8 @@ function NotFoundPage() {
   return (
     <PublicLayout>
       <section className="py-20 px-4 text-center max-w-xl mx-auto">
-        <p className="text-xs font-semibold uppercase tracking-widest text-[#0F766E]">404</p>
-        <h1 className="mt-2 font-serif text-3xl font-semibold text-[#0F1E36] dark:text-white">
+        <p className="text-xs font-semibold uppercase tracking-widest text-[#946000]">404</p>
+        <h1 className="mt-2 font-serif text-3xl font-semibold text-[#22170D] dark:text-white">
           Page Not Found
         </h1>
         <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
@@ -62,7 +62,7 @@ function NotFoundPage() {
         <div className="mt-6 flex items-center justify-center gap-3">
           <Link
             to="/"
-            className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E]"
+            className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000]"
           >
             Return Home
           </Link>

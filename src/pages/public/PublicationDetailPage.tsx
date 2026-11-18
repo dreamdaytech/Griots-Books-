@@ -30,7 +30,7 @@ export function PublicationDetailPage() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Link
           to="/catalogue"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-[#0F1E36]"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-[#22170D]"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Back to Catalogue</span>
@@ -59,11 +59,11 @@ export function PublicationDetailPage() {
             </div>
 
             <div className="md:col-span-8">
-              <p className="text-xs font-medium uppercase tracking-wider text-[#0F766E] dark:text-teal-400">
+              <p className="text-xs font-medium uppercase tracking-wider text-[#946000] dark:text-amber-400">
                 {publication.category || publication.publicationType}
                 {publication.isSample ? ' · Sample Catalogue Record' : ''}
               </p>
-              <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-semibold text-[#0F1E36] dark:text-white leading-tight">
+              <h1 className="mt-2 font-serif text-3xl sm:text-4xl font-semibold text-[#22170D] dark:text-white leading-tight">
                 {publication.title}
               </h1>
               {publication.subtitle && (

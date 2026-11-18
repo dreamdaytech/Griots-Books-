@@ -12,8 +12,8 @@ export function AboutPage() {
       <section className="py-12 lg:py-16">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-6">
-            <p className="text-xs font-medium uppercase tracking-widest text-[#0F766E]">About the Press</p>
-            <h1 className="mt-3 font-serif text-3xl sm:text-4xl font-semibold text-[#0F1E36] dark:text-white">
+            <p className="text-xs font-medium uppercase tracking-widest text-[#946000]">About the Press</p>
+            <h1 className="mt-3 font-serif text-3xl sm:text-4xl font-semibold text-[#22170D] dark:text-white">
               An integrated ecosystem for independent books and scholarly publishing.
             </h1>
             <p className="mt-4 text-base text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -25,7 +25,7 @@ export function AboutPage() {
             <div className="mt-6 flex gap-3">
               <Link
                 to="/dashboard/submit"
-                className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E]"
+                className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000]"
               >
                 Submit a Manuscript
               </Link>
@@ -58,10 +58,10 @@ export function GuidelinesPage({ academic = false }: { academic?: boolean }) {
     <PublicLayout>
       <section className="py-12 lg:py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <p className="text-xs font-medium uppercase tracking-widest text-[#0F766E]">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#946000]">
             {academic ? 'Academic & Research Submissions' : 'Author Guidelines'}
           </p>
-          <h1 className="mt-3 font-serif text-3xl sm:text-4xl font-semibold text-[#0F1E36] dark:text-white">
+          <h1 className="mt-3 font-serif text-3xl sm:text-4xl font-semibold text-[#22170D] dark:text-white">
             {academic ? 'Academic & Journal Submission Guidelines' : 'Author Manuscript Guidelines'}
           </h1>
           <div className="mt-8 space-y-6 text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -99,7 +99,7 @@ export function GuidelinesPage({ academic = false }: { academic?: boolean }) {
           <div className="mt-8">
             <Link
               to={academic ? '/dashboard/submit?type=academic_research' : '/dashboard/submit'}
-              className="inline-flex px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E]"
+              className="inline-flex px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000]"
             >
               Launch Submission Wizard
             </Link>
@@ -115,7 +115,7 @@ export function FaqPage() {
     <PublicLayout>
       <section className="py-12 lg:py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-[#0F1E36] dark:text-white">
+          <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-[#22170D] dark:text-white">
             Help Center & Frequently Asked Questions
           </h1>
           <div className="mt-8 space-y-5">
@@ -179,7 +179,7 @@ export function ContactPage() {
       <section className="py-12 lg:py-16">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10">
           <div className="lg:col-span-5">
-            <h1 className="font-serif text-3xl font-semibold text-[#0F1E36] dark:text-white">
+            <h1 className="font-serif text-3xl font-semibold text-[#22170D] dark:text-white">
               Contact Editorial Office
             </h1>
             <p className="mt-3 text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -272,7 +272,7 @@ export function ContactPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#0F1E36] text-white hover:bg-[#193055] dark:bg-[#0F766E] disabled:opacity-50"
+                  className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#22170D] text-white hover:bg-[#382511] dark:bg-[#946000] disabled:opacity-50"
                 >
                   {submitting ? 'Sending...' : 'Send Message'}
                 </button>
@@ -327,7 +327,7 @@ export function PolicyPage() {
     <PublicLayout>
       <section className="py-12 lg:py-16">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="font-serif text-3xl font-semibold text-[#0F1E36] dark:text-white">
+          <h1 className="font-serif text-3xl font-semibold text-[#22170D] dark:text-white">
             {policy.title}
           </h1>
           <div className="mt-6 space-y-4 text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed">

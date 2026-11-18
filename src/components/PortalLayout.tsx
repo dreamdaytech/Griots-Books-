@@ -18,6 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { BrandSignature } from './BrandSignature';
 import { usePlatform } from '../context/PlatformContext';
 import {
   canAccessAdminConsole,
@@ -98,7 +99,7 @@ export function PortalLayout({
           onClick={() => setSidebarOpen(false)}
           className={`flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
             active
-              ? 'bg-[#0F1E36] text-white dark:bg-[#0F766E]'
+              ? 'bg-[#22170D] text-white dark:bg-[#946000]'
               : 'text-slate-700 dark:text-slate-300 hover:bg-stone-200/60 dark:hover:bg-slate-800'
           }`}
         >
@@ -109,15 +110,15 @@ export function PortalLayout({
     });
 
   return (
-    <div className="min-h-screen flex bg-[#FAF9F6] dark:bg-[#0B1220] text-[#141923] dark:text-[#F3F4F6]">
+    <div className="min-h-screen flex bg-[#F7F3EE] dark:bg-[#16110C] text-[#241A12] dark:text-[#F8F2EA]">
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col border-r border-stone-200 dark:border-slate-800 bg-[#F3F0EA]/60 dark:bg-slate-950 shrink-0">
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col border-r border-stone-200 dark:border-slate-800 bg-[#F1E8DC]/60 dark:bg-slate-950 shrink-0">
         <div className="h-16 px-5 flex items-center justify-between border-b border-stone-200 dark:border-slate-800">
           <Link
             to="/"
-            className="font-serif text-lg font-semibold text-[#0F1E36] dark:text-white truncate"
+            className="flex min-w-0 items-center"
           >
-            {settings.platformName}
+            <BrandSignature name={settings.platformName} compact />
           </Link>
         </div>
 
@@ -199,8 +200,8 @@ export function PortalLayout({
           />
           <aside className="relative w-72 max-w-[85vw] bg-white dark:bg-slate-900 h-full flex flex-col p-4 z-10 overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-stone-200 dark:border-slate-800">
-              <Link to="/" className="font-serif text-lg font-semibold text-[#0F1E36] dark:text-white">
-                {settings.platformName}
+              <Link to="/" className="flex min-w-0 items-center">
+                <BrandSignature name={settings.platformName} compact />
               </Link>
               <button
                 type="button"

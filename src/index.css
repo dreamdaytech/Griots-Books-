@@ -7,6 +7,14 @@
   --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
+:root {
+  --griots-ink: #22170D;
+  --griots-gold: #946000;
+  --griots-gold-bright: #D69B18;
+  --griots-ivory: #F7F3EE;
+  --griots-paper: #F1E8DC;
+}
+
 @layer base {
   html {
     font-family: var(--font-sans);

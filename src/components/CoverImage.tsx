@@ -14,7 +14,7 @@ export function CoverImage({ src, alt, title, className = '' }: CoverImageProps)
   if (!src || failed) {
     return (
       <div
-        className={`flex flex-col items-center justify-center bg-gradient-to-br from-[#0F1E36] via-[#1B355C] to-[#0F766E] text-white p-6 text-center ${className}`}
+        className={`flex flex-col items-center justify-center bg-gradient-to-br from-[#22170D] via-[#533714] to-[#946000] text-white p-6 text-center ${className}`}
         role="img"
         aria-label={alt}
       >

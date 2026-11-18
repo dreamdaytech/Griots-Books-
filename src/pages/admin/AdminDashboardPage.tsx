@@ -354,7 +354,7 @@ export function AdminDashboardPage() {
             onClick={() => setTab(item.id as AdminTab)}
             className={`px-3.5 py-2 text-xs font-semibold rounded-lg whitespace-nowrap shrink-0 transition-colors ${
               tab === item.id
-                ? 'bg-[#0F1E36] text-white dark:bg-[#0F766E]'
+                ? 'bg-[#22170D] text-white dark:bg-[#946000]'
                 : 'bg-white dark:bg-slate-900 border border-stone-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
             }`}
           >
@@ -497,7 +497,7 @@ export function AdminDashboardPage() {
             </div>
             <button
               type="submit"
-              className="w-full py-2.5 text-sm font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E]"
+              className="w-full py-2.5 text-sm font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000]"
             >
               Add Publishing Service
             </button>
@@ -546,7 +546,7 @@ export function AdminDashboardPage() {
                       key={ms.id}
                       type="button"
                       onClick={() => handlePrefillFromManuscript(ms)}
-                      className="w-full text-left px-3 py-2 text-xs rounded-lg border border-teal-200 bg-teal-50/50 dark:border-teal-800 dark:bg-teal-950/30 hover:border-[#0F766E]"
+                      className="w-full text-left px-3 py-2 text-xs rounded-lg border border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/30 hover:border-[#946000]"
                     >
                       <span className="font-mono">{ms.referenceNumber}</span> — {ms.title}
                     </button>
@@ -657,7 +657,7 @@ export function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => void handleSavePublication('published')}
-                  className="flex-1 py-2 text-xs font-semibold rounded-lg bg-[#0F766E] text-white"
+                  className="flex-1 py-2 text-xs font-semibold rounded-lg bg-[#946000] text-white"
                 >
                   Release to Public Catalogue
                 </button>
@@ -685,7 +685,7 @@ export function AdminDashboardPage() {
                   <button
                     type="button"
                     onClick={() => void handleReleaseExisting(p)}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0F766E] text-white shrink-0"
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#946000] text-white shrink-0"
                   >
                     Release Publicly
                   </button>
@@ -729,7 +729,7 @@ export function AdminDashboardPage() {
                           return loadAdminData();
                         })
                     }
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E]"
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000]"
                   >
                     Confirm Quote
                   </button>
@@ -791,7 +791,7 @@ export function AdminDashboardPage() {
             </div>
             <button
               type="submit"
-              className="w-full py-2.5 text-sm font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E]"
+              className="w-full py-2.5 text-sm font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000]"
             >
               Save Journal Record
             </button>
@@ -852,7 +852,7 @@ export function AdminDashboardPage() {
                       onClick={() => void handleUpdateUserRole(u, r.value)}
                       className={`px-2.5 py-1 text-xs rounded-md border transition-colors ${
                         has
-                          ? 'bg-[#0F1E36] text-white border-[#0F1E36] dark:bg-[#0F766E] dark:border-[#0F766E]'
+                          ? 'bg-[#22170D] text-white border-[#22170D] dark:bg-[#946000] dark:border-[#946000]'
                           : 'border-stone-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                       }`}
                     >
@@ -962,7 +962,7 @@ export function AdminDashboardPage() {
           </label>
           <button
             type="submit"
-            className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E]"
+            className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000]"
           >
             Save Platform Settings
           </button>

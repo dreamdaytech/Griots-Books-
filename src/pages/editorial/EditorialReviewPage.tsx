@@ -123,7 +123,7 @@ export function EditorialReviewPage() {
   if (!manuscript || !user) {
     return (
       <PortalLayout title="Manuscript Not Found" breadcrumb={isEditorialStaff ? 'Editorial Desk' : 'Peer Review Desk'}>
-        <Link to="/editorial" className="text-sm text-[#0F766E] underline">
+        <Link to="/editorial" className="text-sm text-[#946000] underline">
           Back to Review Queue
         </Link>
       </PortalLayout>
@@ -357,7 +357,7 @@ export function EditorialReviewPage() {
                   <div key={ver.id} className="py-3 flex items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-medium">
-                        <span className="font-mono text-xs text-[#0F766E] mr-2">v{ver.versionNumber}</span>
+                        <span className="font-mono text-xs text-[#946000] mr-2">v{ver.versionNumber}</span>
                         {ver.fileName}
                       </p>
                       <p className="text-xs text-slate-500">
@@ -405,7 +405,7 @@ export function EditorialReviewPage() {
                 <button
                   type="submit"
                   disabled={!editedFile || busy}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E] disabled:opacity-40 shrink-0"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000] disabled:opacity-40 shrink-0"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   <span>Upload</span>
@@ -478,7 +478,7 @@ export function EditorialReviewPage() {
                 <button
                   type="submit"
                   disabled={!commentBody.trim() || busy}
-                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E] disabled:opacity-40"
+                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000] disabled:opacity-40"
                 >
                   Record Note
                 </button>
@@ -562,7 +562,7 @@ export function EditorialReviewPage() {
                     <button
                       type="submit"
                       disabled={busy || !nextStatus}
-                      className="w-full py-2 text-xs font-semibold rounded-lg bg-[#0F766E] text-white hover:bg-[#115E59] disabled:opacity-40"
+                      className="w-full py-2 text-xs font-semibold rounded-lg bg-[#946000] text-white hover:bg-[#734B00] disabled:opacity-40"
                     >
                       Apply Status Transition
                     </button>
@@ -602,7 +602,7 @@ export function EditorialReviewPage() {
                 <dl className="space-y-1.5 text-xs">
                   {([5, 4, 3, 2, 1] as const).map((score) => (
                     <div key={score} className="flex items-center justify-between gap-2">
-                      <dt className="font-mono font-semibold text-[#0F766E] dark:text-teal-300">
+                      <dt className="font-mono font-semibold text-[#946000] dark:text-amber-300">
                         {score} / 5
                       </dt>
                       <dd className="text-slate-600 dark:text-slate-300">

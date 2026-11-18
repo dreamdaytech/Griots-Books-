@@ -41,14 +41,14 @@ interface PeerReviewModuleProps {
 }
 
 const SEVERITY_TEXT_CLASSES: Record<AnnotationSeverity, string> = {
-  commendation: 'text-teal-700 dark:text-teal-300',
+  commendation: 'text-amber-700 dark:text-amber-300',
   minor_suggestion: 'text-sky-700 dark:text-sky-300',
   major_issue: 'text-amber-700 dark:text-amber-300',
   required_correction: 'text-red-700 dark:text-red-300',
 };
 
 const RECOMMENDATION_TEXT_CLASSES: Record<ReviewRecommendation, string> = {
-  accept: 'text-teal-700 dark:text-teal-300',
+  accept: 'text-amber-700 dark:text-amber-300',
   minor_revision: 'text-sky-700 dark:text-sky-300',
   major_revision: 'text-amber-700 dark:text-amber-300',
   reject: 'text-red-700 dark:text-red-300',
@@ -223,7 +223,7 @@ export function PeerReviewModule({
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <ClipboardCheck className="w-4 h-4 text-[#0F766E] shrink-0" />
+            <ClipboardCheck className="w-4 h-4 text-[#946000] shrink-0" />
             <h2 id="peer-review-heading" className="font-serif text-lg font-semibold text-slate-900 dark:text-white">
               Peer Review &amp; Rubric Assessment
             </h2>
@@ -274,7 +274,7 @@ export function PeerReviewModule({
                 type="button"
                 disabled={busy || !selectedCandidateId}
                 onClick={() => void handleAssignCandidate()}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white hover:bg-[#193055] dark:bg-[#0F766E] dark:hover:bg-[#115E59] disabled:opacity-40 whitespace-nowrap"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#22170D] text-white hover:bg-[#382511] dark:bg-[#946000] dark:hover:bg-[#734B00] disabled:opacity-40 whitespace-nowrap"
               >
                 <UserPlus className="w-3.5 h-3.5" />
                 <span>Assign Reviewer</span>
@@ -372,7 +372,7 @@ export function PeerReviewModule({
         </div>
         <div>
           <span className="text-slate-500 dark:text-slate-400">Mean Rubric Score</span>
-          <p className="mt-0.5 text-base font-semibold text-[#0F766E] dark:text-teal-300 tabular-nums">
+          <p className="mt-0.5 text-base font-semibold text-[#946000] dark:text-amber-300 tabular-nums">
             {summary.averageOverallScore !== null ? `${summary.averageOverallScore.toFixed(1)} / 5.0` : '—'}
           </p>
         </div>
@@ -462,7 +462,7 @@ export function PeerReviewModule({
                 <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                   Computed Average
                 </span>
-                <span className="font-mono text-sm font-semibold text-[#0F766E] dark:text-teal-300 tabular-nums">
+                <span className="font-mono text-sm font-semibold text-[#946000] dark:text-amber-300 tabular-nums">
                   {liveOverallScore.toFixed(1)} / 5.0
                 </span>
               </div>
@@ -502,7 +502,7 @@ export function PeerReviewModule({
                               onClick={() => handleScoreChange(criterion.key, val)}
                               className={`w-8 h-8 text-xs font-mono font-semibold transition-colors border-r last:border-r-0 border-stone-300 dark:border-slate-700 ${
                                 selected
-                                  ? 'bg-[#0F1E36] text-white dark:bg-[#0F766E]'
+                                  ? 'bg-[#22170D] text-white dark:bg-[#946000]'
                                   : 'bg-white dark:bg-slate-950 text-slate-700 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800'
                               }`}
                             >
@@ -605,7 +605,7 @@ export function PeerReviewModule({
                   type="button"
                   disabled={busy}
                   onClick={handleAddAnnotation}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#0F1E36] text-[#0F1E36] dark:border-teal-500 dark:text-teal-300 hover:bg-[#0F1E36] hover:text-white dark:hover:bg-[#0F766E] dark:hover:text-white transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-[#22170D] text-[#22170D] dark:border-amber-500 dark:text-amber-300 hover:bg-[#22170D] hover:text-white dark:hover:bg-[#946000] dark:hover:text-white transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Section Annotation</span>
@@ -729,7 +729,7 @@ export function PeerReviewModule({
                   type="button"
                   disabled={busy}
                   onClick={() => void handleSave('submitted')}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F766E] text-white hover:bg-[#115E59] disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-[#946000] text-white hover:bg-[#734B00] disabled:opacity-40"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>{existingOwnReview?.status === 'submitted' ? 'Update Submitted Review' : 'Submit Peer Review'}</span>
@@ -775,7 +775,7 @@ export function PeerReviewModule({
                     <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                       Overall Score
                     </span>
-                    <span className="font-mono text-base font-semibold text-[#0F766E] dark:text-teal-300 tabular-nums">
+                    <span className="font-mono text-base font-semibold text-[#946000] dark:text-amber-300 tabular-nums">
                       {rev.overallScore.toFixed(1)} / 5.0
                     </span>
                   </div>
@@ -851,7 +851,7 @@ export function PeerReviewModule({
               onClick={() => setSectionFilter('all')}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors tabular-nums ${
                 sectionFilter === 'all'
-                  ? 'border-[#0F1E36] bg-[#0F1E36] text-white dark:border-[#0F766E] dark:bg-[#0F766E]'
+                  ? 'border-[#22170D] bg-[#22170D] text-white dark:border-[#946000] dark:bg-[#946000]'
                   : 'border-stone-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800'
               }`}
             >
@@ -867,7 +867,7 @@ export function PeerReviewModule({
                   onClick={() => setSectionFilter(sec.key)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors tabular-nums ${
                     sectionFilter === sec.key
-                      ? 'border-[#0F1E36] bg-[#0F1E36] text-white dark:border-[#0F766E] dark:bg-[#0F766E]'
+                      ? 'border-[#22170D] bg-[#22170D] text-white dark:border-[#946000] dark:bg-[#946000]'
                       : 'border-stone-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-stone-100 dark:hover:bg-slate-800'
                   }`}
                 >

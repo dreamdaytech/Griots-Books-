@@ -7,17 +7,17 @@ import type { ManuscriptStatus } from '../domain/types';
 
 const LABEL_TONE_CLASSES: Record<'neutral' | 'info' | 'warning' | 'success' | 'danger', string> = {
   neutral: 'text-slate-700 dark:text-slate-300',
-  info: 'text-[#0F1E36] dark:text-sky-300',
+  info: 'text-[#22170D] dark:text-sky-300',
   warning: 'text-amber-800 dark:text-amber-300',
-  success: 'text-[#0F766E] dark:text-teal-300',
+  success: 'text-[#946000] dark:text-amber-300',
   danger: 'text-red-700 dark:text-red-300',
 };
 
 const BAR_TONE_CLASSES: Record<'neutral' | 'info' | 'warning' | 'success' | 'danger', string> = {
   neutral: 'bg-slate-400 dark:bg-slate-500',
-  info: 'bg-[#0F1E36] dark:bg-sky-400',
+  info: 'bg-[#22170D] dark:bg-sky-400',
   warning: 'bg-amber-600 dark:bg-amber-400',
-  success: 'bg-[#0F766E] dark:bg-teal-400',
+  success: 'bg-[#946000] dark:bg-amber-400',
   danger: 'bg-red-600 dark:bg-red-500',
 };
 

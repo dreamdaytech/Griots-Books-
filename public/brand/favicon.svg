@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Griots Books">
+  <rect width="64" height="64" rx="13" fill="#22170D"/>
+  <path d="M9 20C19 8 45 8 55 20" fill="none" stroke="#D69B18" stroke-width="3" stroke-linecap="round"/>
+  <path d="M8 44C16 41 24 43 32 49C40 43 48 41 56 44M32 49V55" fill="none" stroke="#D69B18" stroke-width="2.5" stroke-linecap="round"/>
+  <text x="32" y="40" text-anchor="middle" font-family="Georgia,serif" font-size="31" font-weight="700" fill="#F7F3EE">G</text>
+</svg>
