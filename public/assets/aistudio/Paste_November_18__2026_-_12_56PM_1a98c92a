@@ -1,0 +1,920 @@
+# MASTER DEVELOPMENT PROMPT
+## Comprehensive Book, Article & Academic Publishing Platform
+
+### 1. PROJECT INSTRUCTIONS
+
+Act as a senior full-stack software engineer, solutions architect, UI/UX designer, publishing technology specialist, and technical product manager.
+
+I want you to design and develop a modern, secure, scalable, professional, production-oriented **Integrated Publishing Management Platform**.
+
+This is a brand-new, independent publishing business and must not be associated with any existing company or project.
+
+For now, use the working name **Publishing Platform** throughout the application. The platform name, logo, brand colors, business information, and contact details must be configurable from the administration dashboard.
+
+The objective is to create a comprehensive online publishing ecosystem where individuals, writers, authors, researchers, universities, and institutions can submit manuscripts and receive professional publishing services.
+
+The platform should support the complete publishing lifecycle, including:
+
+- Manuscript submission and management
+- Editorial assessment and review
+- Professional editing and proofreading
+- Manuscript formatting and typesetting
+- Book cover design
+- Academic peer review
+- ISBN, ISSN, and DOI registration management
+- Digital book and article publication
+- Physical book printing
+- Printing and distribution management
+- Online bookstore and publication catalogue
+- Service quotations, orders, and payments
+- Author royalties and financial reporting
+- Publishing analytics and administration
+
+**Important:** First establish the complete system architecture and implement a functional Phase 1 MVP. Prepare the architecture for all future phases without prematurely implementing complex features that cannot be made functional and secure.
+
+Do not build a static website with nonfunctional buttons. This must be a real application with working navigation, database persistence, authentication, validation, workflows, and role-based access controls.
+
+---
+
+### 2. APPLICATION DESIGN AND USER EXPERIENCE
+
+Create a premium, international-standard publishing website and management application.
+
+The overall appearance should reflect the professionalism of established international publishing houses and modern technology platforms.
+
+Design requirements:
+
+- Clean, elegant, modern visual identity
+- Professional typography suitable for a publishing organization
+- Suggested starting palette: deep navy, white, warm neutral backgrounds, restrained teal and gold accents
+- Modern dashboards and reusable components
+- Fully responsive mobile, tablet, and desktop layouts
+- Accessible navigation, forms, and interactive elements
+- Light and dark mode where practical
+- Professional cards, tables, search, sorting, and filtering
+- Clear status indicators for publishing projects
+- Excellent loading, empty, success, and error states
+- Consistent spacing, form layouts, and button styling
+- Accessible color contrast and keyboard navigation
+- Professional notification and confirmation dialogs
+- Support for future internationalization
+
+Avoid generic AI-generated landing pages, exaggerated marketing claims, unnecessary animations, or crowded layouts.
+
+Use real, meaningful publication content where available. Demo records must be clearly identified as samples and never presented as actual published books, authors, customer reviews, or business achievements.
+
+---
+
+### 3. TECHNOLOGY REQUIREMENTS
+
+Build the platform using a maintainable full-stack architecture.
+
+Preferred frontend:
+
+- React
+- TypeScript
+- Tailwind CSS
+- Reusable component system
+- Modular routing
+- Form validation and error handling
+
+Preferred backend:
+
+- Secure Node.js server-side functions or API routes
+- Service and repository architecture
+- Persistent database
+- Role-based authorization
+- Private file storage
+- Background processing for long-running operations
+- Secure environment variables and secrets
+
+For the initial AI Studio implementation, use a supported persistent authentication and database integration, such as Firebase Authentication and Firestore, if it can be provisioned directly and securely.
+
+However, organize the data access layer so that a future PostgreSQL/Supabase implementation can be adopted without rebuilding the entire frontend or core business workflows.
+
+Do not mix persistence logic throughout UI components.
+
+Create clear separation between:
+
+1. Presentation layer
+2. Authentication and authorization
+3. Business logic and publishing workflows
+4. Database and file access
+5. Document processing
+6. External service integrations
+7. Reporting and analytics
+
+Never place private API keys, privileged credentials, or payment secrets in frontend code.
+
+---
+
+### 4. PUBLIC WEBSITE
+
+Develop a professional public-facing publishing website.
+
+Required pages:
+
+**Homepage**
+
+Include:
+
+- Premium hero section
+- Clear publishing value proposition
+- Overview of services
+- Publish a Book
+- Publish an Article
+- Publish Research
+- Editing and Proofreading
+- Book Design and Formatting
+- ISBN and Publication Registration
+- Printing and Distribution
+- How Publishing Works
+- Publication Categories
+- Featured Publications
+- Latest Articles
+- Academic Journals
+- Publishing Packages
+- Frequently Asked Questions
+- Call to Action
+
+**Additional pages**
+
+- About Us
+- Our Services
+- Publishing Packages and Pricing
+- Books
+- Articles
+- Academic Journals
+- Authors and Researchers
+- Submit a Manuscript
+- Publish a Book
+- Publish an Article
+- Submit Research
+- Editing and Proofreading
+- Book Formatting and Design
+- ISBN, ISSN, and DOI Services
+- Printing and Distribution
+- Author Guidelines
+- Academic Submission Guidelines
+- Contact Us
+- Help Center / FAQs
+- Privacy Policy
+- Terms and Conditions
+- Copyright and Licensing Policies
+- Editorial and Peer Review Policies
+
+Create reusable page templates and dynamically load service information, publication details, and configurable website content.
+
+Do not invent legal terms or business contact information. Use clearly marked draft content until approved by the platform owner.
+
+---
+
+### 5. USER TYPES AND AUTHENTICATION
+
+The application must support multiple roles with securely enforced permissions.
+
+Roles:
+
+1. Visitor / Reader
+2. Registered Author
+3. Researcher
+4. Institutional Administrator
+5. Editor
+6. Managing Editor
+7. Editor-in-Chief
+8. Academic Peer Reviewer
+9. Proofreader
+10. Graphic Designer / Typesetter
+11. Publishing Manager
+12. Printing Partner
+13. Finance Officer
+14. Platform Administrator
+15. Super Administrator
+
+Users may have more than one authorized role.
+
+Authentication requirements:
+
+- Secure account registration
+- Email verification
+- Secure sign-in and sign-out
+- Password reset where password authentication is supported
+- User profile management
+- Account status management
+- Session protection
+- Admin invitation workflows
+- Secure role assignments
+- Administrative MFA readiness
+
+**Security requirement:** Never allow users to select privileged roles such as Administrator, Editor, Reviewer, or Super Administrator during public registration.
+
+New users should receive a basic authorized role by default.
+
+Privileged roles must be assigned through controlled administrative processes.
+
+Implement authorization in the backend, not merely through hidden frontend navigation.
+
+---
+
+### 6. AUTHOR AND RESEARCHER DASHBOARD
+
+Develop an attractive and functional dashboard for registered authors and researchers.
+
+Dashboard overview:
+
+- Welcome section
+- Total submissions
+- Draft manuscripts
+- Manuscripts under review
+- Manuscripts requiring revision
+- Approved manuscripts
+- Published works
+- Pending actions
+- Service orders
+- Recent notifications
+- Project activity timeline
+
+Main navigation:
+
+- Dashboard
+- My Profile
+- My Manuscripts
+- Submit New Manuscript
+- My Publications
+- Editorial Feedback
+- Publishing Services
+- Quotations and Orders
+- Payments and Invoices
+- Messages and Notifications
+- Sales and Royalties (future module)
+- Settings
+
+Authors must be able to follow the progress of their submissions.
+
+Implement detailed project pages with:
+
+- Manuscript information
+- Current publishing stage
+- Assigned services
+- File versions
+- Editorial comments
+- Author revisions
+- Service quotations
+- Approval requests
+- Activity history
+- Secure document downloads
+
+---
+
+### 7. MANUSCRIPT SUBMISSION SYSTEM
+
+Create a fully functional manuscript submission wizard.
+
+Step 1 — Publication Type
+
+Allow selection of:
+
+- Book
+- General Article
+- Academic Research Article
+- Journal Submission
+- Conference Paper
+- Thesis / Dissertation
+- Research Report
+- Other Publication
+
+Step 2 — Publication Information
+
+Fields should include:
+
+- Title
+- Subtitle
+- Abstract or synopsis
+- Publication category
+- Genre or academic discipline
+- Language
+- Keywords
+- Target audience
+- Author information
+- Coauthors
+- Affiliation, where applicable
+- Word count
+- Number of pages, where known
+- Publication objectives
+
+Step 3 — Manuscript Upload
+
+Allow supported document formats such as DOCX and PDF.
+
+Validate extensions, MIME types, file size, permissions, and safe upload handling.
+
+Use private file storage and authorized downloads.
+
+Maintain manuscript version history rather than overwriting previous versions.
+
+Step 4 — Publishing Requirements
+
+Allow the author to request individual or combined services:
+
+- Manuscript evaluation
+- Developmental editing
+- Copyediting
+- Proofreading
+- Formatting
+- Cover design
+- ISBN assistance
+- Digital publication
+- Printing
+- Distribution
+- Academic peer review, where appropriate
+
+Step 5 — Publication Preference
+
+Allow selection of:
+
+- Digital publication only
+- Printed publication only
+- Both digital and printed publication
+- Editorial services only
+- Undecided / Require consultation
+
+Step 6 — Review and Submit
+
+Display a comprehensive summary.
+
+Require confirmation of authorship, rights to submitted materials, acceptance of applicable policies, and submission authorization.
+
+After successful submission:
+
+- Generate a unique manuscript reference number.
+- Save the record securely.
+- Show a confirmation message.
+- Add the manuscript to the author's dashboard.
+- Create the first activity log entry.
+- Notify the appropriate publishing team.
+
+Draft submissions must be resumable.
+
+---
+
+### 8. EDITORIAL MANAGEMENT
+
+Create a dedicated editorial workspace.
+
+Editorial staff should be able to:
+
+- View authorized manuscript submissions
+- Search and filter by category, author, date, and status
+- Open manuscript details
+- Assign editors and proofreaders
+- Review submitted documents
+- Record assessments
+- Request revisions
+- Upload edited versions
+- Add editorial notes
+- Set task deadlines
+- Track editorial milestones
+- Recommend acceptance or rejection
+- Forward work for production
+
+Authors should see only the comments and decisions intended for them.
+
+Internal editorial notes must remain confidential.
+
+Implement controlled workflow transitions with server-side validation.
+
+Suggested statuses:
+
+- Draft
+- Submitted
+- Under Initial Review
+- Assessment Completed
+- Quotation Pending
+- Awaiting Payment
+- Editing in Progress
+- Author Revision Required
+- Formatting in Progress
+- Awaiting Proof Approval
+- Approved for Publication
+- Published
+- Rejected
+- Withdrawn
+- Cancelled
+
+Not every submission must pass through every status.
+
+Use publication-type-specific state machines.
+
+Every consequential editorial action must have a timestamp, acting user, and audit trail.
+
+---
+
+### 9. ACADEMIC AND RESEARCH PUBLISHING
+
+Create a dedicated academic publishing architecture with a separate workflow from general book publishing.
+
+The academic system must support:
+
+- Academic journals
+- Journal sections
+- Journal volumes and issues
+- Research paper submissions
+- Multiple authors and institutional affiliations
+- Abstracts and keywords
+- Bibliographic references
+- Research ethics declarations
+- Conflicts of interest
+- Funding information
+- Data availability declarations
+- Reviewer selection and assignment
+- Confidential reviewer recommendations
+- Author revision requests
+- Editorial decisions
+- Publication acceptance
+- Journal issue assignment
+- Research article publication
+- Post-publication corrections and retractions
+
+Support configurable review models:
+
+- Single-anonymous
+- Double-anonymous
+- Open peer review
+
+The system must prevent unauthorized disclosure of reviewer identities, confidential reviews, and manuscripts.
+
+Reviewer recommendations must remain distinguishable from final editorial decisions.
+
+Paying a publishing or editorial service fee must never automatically produce an acceptance decision.
+
+For Phase 1, establish the journal data model, academic submission forms, and basic editorial screening capabilities.
+
+More advanced reviewer invitation, peer-review cycles, DOI automation, and indexing integrations should be developed in later phases.
+
+---
+
+### 10. PROFESSIONAL PUBLISHING SERVICES
+
+Create a service management module.
+
+Service categories:
+
+- Manuscript Evaluation
+- Developmental Editing
+- Copyediting
+- Line Editing
+- Proofreading
+- Book Formatting
+- Cover Design
+- eBook Conversion
+- ISBN Assistance
+- ISSN Assistance
+- DOI Registration Assistance
+- Print Preparation
+- Printing
+- Distribution
+- Marketing Assistance
+- Journal Management
+- Academic Editorial Support
+
+Service records should include:
+
+- Service name
+- Description
+- Category
+- Pricing method
+- Base price
+- Currency
+- Estimated turnaround
+- Requirements
+- Active/inactive status
+
+Allow administrators to create, edit, deactivate, and organize services.
+
+Support quotations based on service type, manuscript length, complexity, and additional requirements.
+
+The system should clearly distinguish estimated quotations, confirmed quotations, invoices, and verified payments.
+
+---
+
+### 11. ISBN, ISSN, DOI, AND METADATA
+
+Design an identifier management module that supports:
+
+- ISBN application tracking
+- ISBN assignment records
+- Separate ISBNs for qualifying formats or editions
+- ISSN application records
+- DOI registration workflow
+- Publication metadata
+- Identifier verification status
+- Application references
+- Registration evidence
+- Responsible publisher or registration agency
+
+Never generate random ISBNs, ISSNs, or DOIs and claim they are officially registered.
+
+Identifier generation and official registration are separate operations.
+
+Support manual verified entry first, with integration-ready interfaces for authorized agencies and registration providers.
+
+DOI registration, Crossref, ORCID, metadata export, and additional standards-based capabilities can be implemented in later phases.
+
+---
+
+### 12. DOCUMENT EDITING AND FORMATTING
+
+The platform should support professional document-processing workflows.
+
+Plan for:
+
+- DOCX manuscript preview
+- Versioned document storage
+- Editorial comments
+- Track-changes-compatible document workflows
+- Proofreading annotations
+- Book formatting templates
+- Title and copyright pages
+- Tables of contents
+- Chapter styling
+- Page numbering
+- Headers and footers
+- Academic references
+- PDF export
+- EPUB generation
+- Print-ready PDF production
+
+For Phase 1, prioritize reliable manuscript uploads, authorized downloads, editable metadata, editorial notes, version history, and proof approval.
+
+Do not simulate advanced DOCX editing or PDF/EPUB production by presenting nonfunctional controls.
+
+Use suitable document-processing libraries or integrations only when their actual behavior can be tested and validated.
+
+---
+
+### 13. PRINTING AND DISTRIBUTION
+
+Prepare a future printing management module.
+
+Features should include:
+
+- Print or digital publishing selection
+- Paperback and hardcover options
+- Book dimensions
+- Paper specifications
+- Color or black-and-white printing
+- Binding type
+- Number of copies
+- Print quotation requests
+- Print partner assignments
+- Proof-copy approval
+- Printing status
+- Delivery information
+- Dispatch tracking
+- Printing invoices
+- Reprint requests
+
+Support both local printing partners and future international print-on-demand integrations.
+
+Do not advertise automatic international printing or distribution unless an actual provider is configured and operational.
+
+---
+
+### 14. DIGITAL BOOKSTORE AND PUBLICATIONS
+
+Develop a reusable public publication catalogue architecture.
+
+Support:
+
+- Book listings
+- Academic journal listings
+- Article listings
+- Author profiles
+- Book detail pages
+- Publication descriptions
+- Cover images
+- Categories and genres
+- Search and filtering
+- ISBN/ISSN/DOI information where verified
+- Digital or print format indicators
+- Publication dates
+- Free or paid access designations
+- Public article reading pages
+- Download permissions
+
+Future commercial functions:
+
+- Shopping cart
+- Checkout
+- Secure digital purchases
+- Print orders
+- Customer library
+- Sales reporting
+- Author earnings
+- Royalties
+- Refunds
+
+The first phase should use genuine publication records and distinguish drafts, approved publications, and publicly released works.
+
+Never expose an unpublished or private manuscript through the public catalogue.
+
+---
+
+### 15. ADMINISTRATION DASHBOARD
+
+Create a professional super administrator and operational administration interface.
+
+Dashboard metrics:
+
+- Total registered users
+- Total authors
+- Total manuscripts
+- Submitted manuscripts
+- Pending assessments
+- Active editorial tasks
+- Manuscripts awaiting author action
+- Published books
+- Published articles
+- Academic journal submissions
+- Active services
+- Recent platform activity
+
+Navigation:
+
+- Overview
+- Users and Roles
+- Authors and Researchers
+- Manuscript Management
+- Editorial Management
+- Academic Journals
+- Reviewers
+- Publishing Services
+- Packages and Pricing
+- Quotations and Orders
+- Publications
+- Identifier Management
+- Printing and Distribution
+- Payments and Finance
+- Website Content
+- Reports and Analytics
+- Notifications
+- Audit Logs
+- Platform Settings
+
+Include an advanced table system with pagination, search, filters, sorting, and detailed record views.
+
+Administrators should be able to view authorized records and manage workflows without bypassing required editorial or author approvals.
+
+---
+
+### 16. AI-ASSISTED PUBLISHING
+
+Design optional AI assistance powered by Gemini using secure server-side calls.
+
+Potential capabilities:
+
+- Grammar suggestions
+- Spelling review
+- Manuscript summaries
+- Editorial assessment assistance
+- Formatting suggestions
+- Keyword recommendations
+- Abstract improvement suggestions
+- Readability analysis
+- Metadata drafting
+- Marketing description drafting
+- Editorial task summaries
+
+Important safeguards:
+
+- AI suggestions must be clearly identified.
+- Authors and editors retain decision-making authority.
+- AI must not automatically accept or reject scholarly manuscripts.
+- AI must not fabricate references, research findings, identifiers, or peer-review reports.
+- Confidential manuscripts must not be sent to an AI provider without appropriate disclosure, authorization, and safeguards.
+- AI assistance must be optional and configurable.
+- Record AI actions where necessary for accountability.
+
+For Phase 1, AI can be limited to low-risk drafting suggestions or disabled until the core submission and review workflow is stable.
+
+---
+
+### 17. DATABASE AND DATA MODEL
+
+Design a normalized, extensible data model.
+
+Include domain entities for:
+
+- Users and Profiles
+- Roles and Permissions
+- Institutions
+- Authors and Contributors
+- Publication Projects
+- Manuscripts
+- Manuscript Files
+- File Versions
+- Publication Types
+- Editorial Assignments
+- Editorial Reviews
+- Editorial Decisions
+- Reviewer Assignments
+- Academic Journals
+- Journal Sections
+- Journal Issues
+- Services
+- Service Packages
+- Service Orders
+- Quotations
+- Invoices
+- Payments
+- Publication Metadata
+- Publication Editions
+- Publication Identifiers
+- Production Jobs
+- Print Orders
+- Royalties
+- Notifications
+- Audit Logs
+- Application Settings
+
+Ensure stable identifiers, timestamps, referential relationships, ownership, and secure access policies.
+
+Do not store confidential manuscripts in publicly accessible storage.
+
+For Firestore, model documents and relationships appropriately rather than assuming SQL database behavior.
+
+Design future migration compatibility through documented repository interfaces.
+
+---
+
+### 18. SECURITY, QUALITY, AND RELIABILITY
+
+Build using secure-by-default principles.
+
+Requirements:
+
+- Server-side authorization
+- Role-based access controls
+- Tenant and institutional data isolation
+- Input validation
+- Secure file uploads
+- Private manuscript storage
+- Restricted administrative actions
+- Secure secret management
+- Audit logging
+- Protection against unauthorized data access
+- Protection against unsafe document rendering
+- Error logging without leaking confidential information
+- Consistent loading and error states
+- Reliable database persistence
+- Confirmation dialogs for destructive actions
+- Safe document versioning
+- Backup and recovery planning
+
+Use testable architecture and clear error handling.
+
+Avoid hardcoded privileged accounts, development passwords, or public access to confidential files.
+
+Use clearly labelled demonstration data only where needed for development.
+
+Never report external integrations or payments as successful unless a verified external operation has completed.
+
+---
+
+### 19. DEVELOPMENT PHASES
+
+Create the full architecture, but implement progressively.
+
+**PHASE 1 — FUNCTIONAL CORE MVP**
+
+Implement:
+
+1. Application foundation and routing
+2. Professional responsive public website
+3. Authentication
+4. Basic role-based access
+5. Author and researcher profiles
+6. Author dashboard
+7. Manuscript submission wizard
+8. Secure manuscript upload and persistence
+9. Manuscript detail pages
+10. Editing and assessment workspace
+11. Editorial task assignment
+12. Editorial comments and status transitions
+13. Author revision and proof approval
+14. Publishing service catalogue
+15. Quotation request management
+16. Basic academic journal records and submissions
+17. Basic administrator dashboard
+18. Publication record management
+19. Basic public publication catalogue
+20. Application settings and audit logs
+
+**PHASE 2 — DIGITAL PRODUCTION AND COMMERCE**
+
+Implement document-processing improvements, ISBN workflows, cover and production management, storefront checkout, payments, printing orders, and royalty accounting.
+
+**PHASE 3 — ADVANCED ACADEMIC PUBLISHING**
+
+Implement expanded peer review, journal issues and volumes, DOI registration integrations, ORCID, research integrity controls, and structured publication metadata.
+
+**PHASE 4 — INTERNATIONAL DISTRIBUTION AND AUTOMATION**
+
+Implement distribution partners, print-on-demand integrations, advanced AI assistance, analytics, institutional subscriptions, and multilingual capabilities.
+
+Do not attempt to implement all four phases simultaneously.
+
+---
+
+### 20. PHASE 1 ACCEPTANCE CRITERIA
+
+The first development milestone is complete only when the following scenarios genuinely work:
+
+**Scenario A — Author submission**
+
+A user registers, signs in, completes a profile, creates a manuscript draft, uploads a document, selects requested publishing services, submits the manuscript, and later sees the saved submission on their dashboard.
+
+**Scenario B — Editorial assessment**
+
+An authorized editor opens the manuscript, records an assessment, changes its status using an allowed transition, and requests a revision. The author receives the appropriate notification and sees the request.
+
+**Scenario C — Document revision**
+
+The author uploads a revised document. The previous file version remains available to authorized users, and the project history identifies the new revision.
+
+**Scenario D — Service management**
+
+The administrator creates an editing or formatting service. The author can view the service and submit a request linked to a manuscript.
+
+**Scenario E — Academic submission**
+
+A researcher creates an academic manuscript submission containing a title, abstract, coauthors, affiliations, keywords, ethics declarations, and uploaded document.
+
+**Scenario F — Access control**
+
+A normal author cannot open another author's private submission, reviewer information, or administrative routes merely by changing a URL.
+
+**Scenario G — Persistence**
+
+Refresh the application and confirm that saved profiles, manuscripts, revisions, services, and workflow histories remain stored.
+
+**Scenario H — Publication**
+
+An authorized publishing manager can release an eligible, approved publication record to the public catalogue, while unpublished manuscripts remain confidential.
+
+Create tests for critical authorization rules, domain services, and workflow transitions.
+
+---
+
+### 21. IMPLEMENTATION INSTRUCTIONS
+
+Start development now.
+
+Follow this order:
+
+**Step 1:** Establish the project structure, routes, core components, configuration, and design system.
+
+**Step 2:** Create a professional responsive homepage, public navigation, shared layout, and essential public pages.
+
+**Step 3:** Implement authentication, profile management, database connection, and role-based dashboards.
+
+**Step 4:** Implement the manuscript submission wizard and persistence.
+
+**Step 5:** Implement editorial review, assignments, document version management, and workflow status changes.
+
+**Step 6:** Implement the service catalogue, quotations, basic academic submission, and administration.
+
+**Step 7:** Implement the first release of the publication catalogue and run end-to-end tests.
+
+Keep features modular so they can be developed, tested, and improved independently.
+
+If a critical integration requires account setup or credentials that are unavailable, build a clearly identified integration boundary, explain the missing configuration, and continue with the features that can actually work.
+
+Do not silently replace backend functionality with localStorage, static mock responses, or pretend payment/registration workflows.
+
+**At the end of each meaningful implementation milestone, provide:**
+
+- What was implemented
+- Which components and pages are functional
+- Database collections or tables created
+- What was tested
+- Any errors or limitations
+- External configuration needed
+- Remaining work
+- Recommended next development step
+
+Maintain clean code, consistent naming, reusable components, and documentation.
+
+Where the environment supports GitHub synchronization, keep the project compatible with normal Git version control.
+
+Most importantly, do not redesign or remove completed working functionality unnecessarily during future phases.
+
+### FINAL INSTRUCTION
+
+Begin by creating the actual application for Phase 1.
+
+Establish the full project structure and start implementing the modern public-facing website, authentication foundation, author dashboard, manuscript submission system, editorial management foundation, and administration dashboard.
+
+Create a working preview that I can inspect and refine.
+
+The result should be a professional publishing platform foundation—not a static design demonstration.

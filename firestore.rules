@@ -1,0 +1,656 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Core Primitives & Identity Helpers
+    // -------------------------------------------------------------------------
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isBootstrappedAdmin() {
+      return isEmailVerified() && request.auth.token.email == 'dreamdaytech@gmail.com';
+    }
+
+    function hasUserDoc() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userRoles() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles;
+    }
+
+    function hasAnyRole(allowed) {
+      return isEmailVerified() && hasUserDoc() && userRoles().hasAny(allowed);
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() ||
+        (isEmailVerified() && exists(/databases/$(database)/documents/admins/$(request.auth.uid))) ||
+        hasAnyRole(['platform_admin', 'super_admin']);
+    }
+
+    function isEditorialStaff() {
+      return isAdmin() || hasAnyRole(['editor', 'managing_editor', 'editor_in_chief', 'proofreader', 'designer', 'publishing_manager']);
+    }
+
+    function isPublishingManager() {
+      return isAdmin() || hasAnyRole(['publishing_manager', 'managing_editor', 'editor_in_chief']);
+    }
+
+    // -------------------------------------------------------------------------
+    // Validation Blueprints
+    // -------------------------------------------------------------------------
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email', 'displayName', 'roles', 'accountStatus', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'email', 'displayName', 'roles', 'accountStatus', 'affiliation', 'orcid', 'bio', 'country', 'createdAt', 'updatedAt'])
+        && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 254
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && data.roles is list && data.roles.size() >= 1 && data.roles.size() <= 8 && data.roles[0] is string
+        && data.accountStatus in ['active', 'suspended', 'pending_verification']
+        && (!('affiliation' in data) || (data.affiliation is string && data.affiliation.size() <= 200))
+        && (!('orcid' in data) || (data.orcid is string && data.orcid.size() <= 40))
+        && (!('bio' in data) || (data.bio is string && data.bio.size() <= 2000))
+        && (!('country' in data) || (data.country is string && data.country.size() <= 100))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPublicProfile(data) {
+      return data.keys().hasAll(['uid', 'displayName', 'isSample', 'updatedAt'])
+        && data.keys().hasOnly(['uid', 'displayName', 'affiliation', 'bio', 'orcid', 'discipline', 'isSample', 'updatedAt'])
+        && data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128
+        && data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 120
+        && (!('affiliation' in data) || (data.affiliation is string && data.affiliation.size() <= 200))
+        && (!('bio' in data) || (data.bio is string && data.bio.size() <= 2000))
+        && (!('orcid' in data) || (data.orcid is string && data.orcid.size() <= 40))
+        && (!('discipline' in data) || (data.discipline is string && data.discipline.size() <= 120))
+        && data.isSample is bool
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidManuscript(data) {
+      return data.keys().hasAll([
+          'id', 'referenceNumber', 'authorId', 'authorName', 'title',
+          'publicationType', 'status', 'currentVersionNumber', 'declarationsAccepted',
+          'isSample', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'referenceNumber', 'authorId', 'authorName', 'title', 'subtitle', 'abstract',
+          'publicationType', 'category', 'discipline', 'language', 'keywords', 'targetAudience',
+          'coauthors', 'affiliation', 'wordCount', 'pageCount', 'objectives',
+          'requestedServices', 'publicationPreference', 'status', 'assignedEditorId',
+          'assignedEditorName', 'assignedReviewerIds', 'journalId', 'ethicsDeclaration',
+          'conflictOfInterest', 'fundingInfo', 'dataAvailability', 'declarationsAccepted',
+          'currentVersionNumber', 'isSample', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
+        && data.referenceNumber is string && data.referenceNumber.size() >= 4 && data.referenceNumber.size() <= 40
+        && data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128
+        && data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 120
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 300
+        && (!('subtitle' in data) || (data.subtitle is string && data.subtitle.size() <= 300))
+        && (!('abstract' in data) || (data.abstract is string && data.abstract.size() <= 8000))
+        && data.publicationType in ['book', 'general_article', 'academic_research', 'journal_submission', 'conference_paper', 'thesis_dissertation', 'research_report', 'other']
+        && (!('category' in data) || (data.category is string && data.category.size() <= 120))
+        && (!('discipline' in data) || (data.discipline is string && data.discipline.size() <= 120))
+        && (!('language' in data) || (data.language is string && data.language.size() <= 60))
+        && (!('keywords' in data) || (data.keywords is list && data.keywords.size() <= 20))
+        && (!('targetAudience' in data) || (data.targetAudience is string && data.targetAudience.size() <= 200))
+        && (!('coauthors' in data) || (data.coauthors is list && data.coauthors.size() <= 30))
+        && (!('affiliation' in data) || (data.affiliation is string && data.affiliation.size() <= 200))
+        && (!('wordCount' in data) || (data.wordCount is int && data.wordCount >= 0 && data.wordCount <= 2000000))
+        && (!('pageCount' in data) || (data.pageCount is int && data.pageCount >= 0 && data.pageCount <= 50000))
+        && (!('objectives' in data) || (data.objectives is string && data.objectives.size() <= 2000))
+        && (!('requestedServices' in data) || (data.requestedServices is list && data.requestedServices.size() <= 25))
+        && (!('publicationPreference' in data) || (data.publicationPreference in ['digital_only', 'print_only', 'both', 'editorial_only', 'consultation']))
+        && data.status in [
+          'draft', 'submitted', 'under_initial_review', 'assessment_completed',
+          'quotation_pending', 'awaiting_payment', 'editing_in_progress',
+          'author_revision_required', 'formatting_in_progress', 'awaiting_proof_approval',
+          'approved_for_publication', 'published', 'rejected', 'withdrawn', 'cancelled'
+        ]
+        && (!('assignedEditorId' in data) || (data.assignedEditorId is string && data.assignedEditorId.size() <= 128))
+        && (!('assignedEditorName' in data) || (data.assignedEditorName is string && data.assignedEditorName.size() <= 120))
+        && (!('assignedReviewerIds' in data) || (data.assignedReviewerIds is list && data.assignedReviewerIds.size() <= 15))
+        && (!('journalId' in data) || (data.journalId is string && data.journalId.size() <= 128))
+        && (!('ethicsDeclaration' in data) || (data.ethicsDeclaration is string && data.ethicsDeclaration.size() <= 1500))
+        && (!('conflictOfInterest' in data) || (data.conflictOfInterest is string && data.conflictOfInterest.size() <= 1000))
+        && (!('fundingInfo' in data) || (data.fundingInfo is string && data.fundingInfo.size() <= 1000))
+        && (!('dataAvailability' in data) || (data.dataAvailability is string && data.dataAvailability.size() <= 1000))
+        && data.declarationsAccepted is bool
+        && data.currentVersionNumber is int && data.currentVersionNumber >= 0 && data.currentVersionNumber <= 500
+        && data.isSample is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidManuscriptVersion(data) {
+      return data.keys().hasAll(['id', 'manuscriptId', 'manuscriptAuthorId', 'versionNumber', 'fileName', 'mimeType', 'sizeBytes', 'storageKey', 'uploadedBy', 'createdAt'])
+        && data.keys().hasOnly(['id', 'manuscriptId', 'manuscriptAuthorId', 'versionNumber', 'fileName', 'mimeType', 'sizeBytes', 'storageKey', 'sha256', 'uploadedBy', 'uploadedByName', 'notes', 'createdAt'])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
+        && data.manuscriptId is string && data.manuscriptId.size() >= 1 && data.manuscriptId.size() <= 128
+        && data.manuscriptAuthorId is string && data.manuscriptAuthorId.size() >= 1 && data.manuscriptAuthorId.size() <= 128
+        && data.versionNumber is int && data.versionNumber >= 1 && data.versionNumber <= 500
+        && data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 255
+        && data.mimeType is string && data.mimeType.size() >= 3 && data.mimeType.size() <= 120
+        && data.sizeBytes is int && data.sizeBytes >= 1 && data.sizeBytes <= 52428800
+        && data.storageKey is string && data.storageKey.size() >= 1 && data.storageKey.size() <= 300
+        && (!('sha256' in data) || (data.sha256 is string && data.sha256.size() <= 128))
+        && data.uploadedBy is string && data.uploadedBy.size() >= 1 && data.uploadedBy.size() <= 128
+        && (!('uploadedByName' in data) || (data.uploadedByName is string && data.uploadedByName.size() <= 120))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidComment(data) {
+      return data.keys().hasAll(['id', 'manuscriptId', 'manuscriptAuthorId', 'authorId', 'authorName', 'visibility', 'commentType', 'body', 'createdAt'])
+        && data.keys().hasOnly(['id', 'manuscriptId', 'manuscriptAuthorId', 'authorId', 'authorName', 'authorRole', 'visibility', 'commentType', 'body', 'createdAt'])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
+        && data.manuscriptId is string && data.manuscriptId.size() >= 1 && data.manuscriptId.size() <= 128
+        && data.manuscriptAuthorId is string && data.manuscriptAuthorId.size() >= 1 && data.manuscriptAuthorId.size() <= 128
+        && data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128
+        && data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 120
+        && (!('authorRole' in data) || (data.authorRole is string && data.authorRole.size() <= 60))
+        && data.visibility in ['author_visible', 'internal_editorial', 'confidential_review']
+        && data.commentType in ['assessment', 'revision_request', 'editorial_note', 'proof_feedback']
+        && data.body is string && data.body.size() >= 1 && data.body.size() <= 5000
+        && data.createdAt is timestamp;
+    }
+
+    function isValidHistory(data) {
+      return data.keys().hasAll(['id', 'manuscriptId', 'manuscriptAuthorId', 'actorId', 'actorName', 'action', 'createdAt'])
+        && data.keys().hasOnly(['id', 'manuscriptId', 'manuscriptAuthorId', 'actorId', 'actorName', 'action', 'fromStatus', 'toStatus', 'details', 'createdAt'])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
+        && data.manuscriptId is string && data.manuscriptId.size() >= 1 && data.manuscriptId.size() <= 128
+        && data.manuscriptAuthorId is string && data.manuscriptAuthorId.size() >= 1 && data.manuscriptAuthorId.size() <= 128
+        && data.actorId is string && data.actorId.size() >= 1 && data.actorId.size() <= 128
+        && data.actorName is string && data.actorName.size() >= 1 && data.actorName.size() <= 120
+        && data.action is string && data.action.size() >= 1 && data.action.size() <= 120
+        && (!('fromStatus' in data) || (data.fromStatus is string && data.fromStatus.size() <= 60))
+        && (!('toStatus' in data) || (data.toStatus is string && data.toStatus.size() <= 60))
+        && (!('details' in data) || (data.details is string && data.details.size() <= 1000))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidService(data) {
+      return data.keys().hasAll(['id', 'name', 'description', 'category', 'pricingMethod', 'basePrice', 'currency', 'active', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'name', 'description', 'category', 'pricingMethod', 'basePrice', 'currency', 'estimatedTurnaround', 'requirements', 'active', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 140
+        && data.description is string && data.description.size() >= 1 && data.description.size() <= 1500
+        && data.category is string && data.category.size() >= 2 && data.category.size() <= 80
+        && data.pricingMethod in ['flat_fee', 'per_word', 'per_page', 'custom_quote']
+        && data.basePrice is number && data.basePrice >= 0 && data.basePrice <= 1000000
+        && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
+        && (!('estimatedTurnaround' in data) || (data.estimatedTurnaround is string && data.estimatedTurnaround.size() <= 80))
+        && (!('requirements' in data) || (data.requirements is string && data.requirements.size() <= 500))
+        && data.active is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidQuotation(data) {
+      return data.keys().hasAll(['id', 'manuscriptId', 'authorId', 'serviceIds', 'status', 'currency', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'manuscriptId', 'manuscriptTitle', 'authorId', 'serviceIds', 'notes', 'status', 'estimatedAmount', 'confirmedAmount', 'currency', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
+        && data.manuscriptId is string && data.manuscriptId.size() >= 1 && data.manuscriptId.size() <= 128
+        && (!('manuscriptTitle' in data) || (data.manuscriptTitle is string && data.manuscriptTitle.size() <= 300))
+        && data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128
+        && data.serviceIds is list && data.serviceIds.size() >= 1 && data.serviceIds.size() <= 20 && data.serviceIds[0] is string
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 2000))
+        && data.status in ['requested', 'estimated', 'confirmed', 'invoiced', 'paid', 'cancelled']
+        && (!('estimatedAmount' in data) || (data.estimatedAmount is number && data.estimatedAmount >= 0))
+        && (!('confirmedAmount' in data) || (data.confirmedAmount is number && data.confirmedAmount >= 0))
+        && data.currency is string && data.currency.size() >= 3 && data.currency.size() <= 10
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidJournal(data) {
+      return data.keys().hasAll(['id', 'title', 'discipline', 'reviewModel', 'active', 'isSample', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'title', 'issn', 'identifierStatus', 'description', 'discipline', 'reviewModel', 'editorInChief', 'sections', 'active', 'isSample', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 200
+        && (!('issn' in data) || (data.issn is string && data.issn.size() <= 40))
+        && (!('identifierStatus' in data) || (data.identifierStatus in ['unassigned', 'pending_registration', 'verified']))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 2000))
+        && data.discipline is string && data.discipline.size() >= 2 && data.discipline.size() <= 120
+        && data.reviewModel in ['single_anonymous', 'double_anonymous', 'open']
+        && (!('editorInChief' in data) || (data.editorInChief is string && data.editorInChief.size() <= 120))
+        && (!('sections' in data) || (data.sections is list && data.sections.size() <= 25))
+        && data.active is bool
+        && data.isSample is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidPublication(data) {
+      return data.keys().hasAll(['id', 'authorId', 'authorName', 'title', 'publicationType', 'format', 'accessType', 'releaseStatus', 'isSample', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly([
+          'id', 'manuscriptId', 'authorId', 'authorName', 'title', 'subtitle', 'abstract',
+          'publicationType', 'category', 'format', 'accessType', 'price', 'currency',
+          'isbn', 'issn', 'doi', 'identifierStatus', 'coverUrl', 'excerpt',
+          'releaseStatus', 'isSample', 'publishedAt', 'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
+        && (!('manuscriptId' in data) || (data.manuscriptId is string && data.manuscriptId.size() <= 128))
+        && data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128
+        && data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 120
+        && data.title is string && data.title.size() >= 2 && data.title.size() <= 300
+        && (!('subtitle' in data) || (data.subtitle is string && data.subtitle.size() <= 300))
+        && (!('abstract' in data) || (data.abstract is string && data.abstract.size() <= 8000))
+        && data.publicationType is string && data.publicationType.size() >= 2 && data.publicationType.size() <= 60
+        && (!('category' in data) || (data.category is string && data.category.size() <= 120))
+        && data.format in ['digital', 'print', 'both']
+        && data.accessType in ['free', 'paid']
+        && (!('price' in data) || (data.price is number && data.price >= 0))
+        && (!('currency' in data) || (data.currency is string && data.currency.size() <= 10))
+        && (!('isbn' in data) || (data.isbn is string && data.isbn.size() <= 40))
+        && (!('issn' in data) || (data.issn is string && data.issn.size() <= 40))
+        && (!('doi' in data) || (data.doi is string && data.doi.size() <= 120))
+        && (!('identifierStatus' in data) || (data.identifierStatus in ['unassigned', 'pending_registration', 'verified']))
+        && (!('coverUrl' in data) || (data.coverUrl is string && data.coverUrl.size() <= 500))
+        && (!('excerpt' in data) || (data.excerpt is string && data.excerpt.size() <= 12000))
+        && data.releaseStatus in ['approved', 'published', 'archived']
+        && data.isSample is bool
+        && (!('publishedAt' in data) || data.publishedAt is timestamp)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['id', 'userId', 'title', 'message', 'read', 'createdAt'])
+        && data.keys().hasOnly(['id', 'userId', 'title', 'message', 'link', 'read', 'createdAt'])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
+        && data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128
+        && data.title is string && data.title.size() >= 1 && data.title.size() <= 160
+        && data.message is string && data.message.size() >= 1 && data.message.size() <= 600
+        && (!('link' in data) || (data.link is string && data.link.size() <= 300))
+        && data.read is bool
+        && data.createdAt is timestamp;
+    }
+
+    function isValidAuditLog(data) {
+      return data.keys().hasAll(['id', 'actorId', 'action', 'targetType', 'targetId', 'summary', 'createdAt'])
+        && data.keys().hasOnly(['id', 'actorId', 'actorName', 'action', 'targetType', 'targetId', 'summary', 'createdAt'])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
+        && data.actorId is string && data.actorId.size() >= 1 && data.actorId.size() <= 128
+        && (!('actorName' in data) || (data.actorName is string && data.actorName.size() <= 120))
+        && data.action is string && data.action.size() >= 1 && data.action.size() <= 120
+        && data.targetType is string && data.targetType.size() >= 1 && data.targetType.size() <= 80
+        && data.targetId is string && data.targetId.size() >= 1 && data.targetId.size() <= 128
+        && data.summary is string && data.summary.size() >= 1 && data.summary.size() <= 600
+        && data.createdAt is timestamp;
+    }
+
+    function isValidSettings(data) {
+      return data.keys().hasAll(['id', 'platformName', 'primaryColor', 'accentColor', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'platformName', 'tagline', 'primaryColor', 'accentColor', 'contactEmail', 'contactPhone', 'businessAddress', 'aiAssistanceEnabled', 'updatedAt'])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 64
+        && data.platformName is string && data.platformName.size() >= 2 && data.platformName.size() <= 120
+        && (!('tagline' in data) || (data.tagline is string && data.tagline.size() <= 200))
+        && data.primaryColor is string && data.primaryColor.size() >= 3 && data.primaryColor.size() <= 20
+        && data.accentColor is string && data.accentColor.size() >= 3 && data.accentColor.size() <= 20
+        && (!('contactEmail' in data) || (data.contactEmail is string && data.contactEmail.size() <= 200))
+        && (!('contactPhone' in data) || (data.contactPhone is string && data.contactPhone.size() <= 60))
+        && (!('businessAddress' in data) || (data.businessAddress is string && data.businessAddress.size() <= 300))
+        && (!('aiAssistanceEnabled' in data) || data.aiAssistanceEnabled is bool)
+        && data.updatedAt is timestamp;
+    }
+
+    // -------------------------------------------------------------------------
+    // Collection Rules
+    // -------------------------------------------------------------------------
+
+    match /admins/{adminId} {
+      allow get: if isValidId(adminId) && (isOwner(adminId) || isAdmin());
+      allow list: if isAdmin();
+      allow create, update, delete: if isValidId(adminId) && isAdmin();
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isEditorialStaff());
+      allow list: if isAdmin() || isEditorialStaff();
+
+      allow create: if isValidId(userId)
+        && isEmailVerified()
+        && isOwner(userId)
+        && isValidUserProfile(incoming())
+        && incoming().uid == userId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && incoming().roles.hasOnly(['author', 'researcher'])
+        && incoming().accountStatus == 'active';
+
+      allow update: if isValidId(userId)
+        && isEmailVerified()
+        && isValidUserProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin() ||
+          (
+            isOwner(userId)
+            && incoming().roles == existing().roles
+            && incoming().accountStatus == existing().accountStatus
+            && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'affiliation', 'orcid', 'bio', 'country', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isValidId(userId) && isAdmin();
+    }
+
+    match /publicProfiles/{userId} {
+      allow get: if isValidId(userId);
+      allow list: if true;
+      allow create: if isValidId(userId)
+        && isEmailVerified()
+        && (isOwner(userId) || isAdmin())
+        && isValidPublicProfile(incoming())
+        && incoming().uid == userId
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(userId)
+        && isEmailVerified()
+        && (isOwner(userId) || isAdmin())
+        && isValidPublicProfile(incoming())
+        && incoming().uid == existing().uid
+        && incoming().updatedAt == request.time;
+      allow delete: if isValidId(userId) && isAdmin();
+    }
+
+    match /manuscripts/{manuscriptId} {
+      allow get: if isValidId(manuscriptId) && isSignedIn() && (
+        existing().authorId == request.auth.uid ||
+        isEditorialStaff() ||
+        ('assignedReviewerIds' in existing() && request.auth.uid in existing().assignedReviewerIds)
+      );
+
+      allow list: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid ||
+        isEditorialStaff()
+      );
+
+      allow create: if isValidId(manuscriptId)
+        && isEmailVerified()
+        && isValidManuscript(incoming())
+        && incoming().id == manuscriptId
+        && incoming().authorId == request.auth.uid
+        && incoming().status in ['draft', 'submitted']
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isValidId(manuscriptId)
+        && isEmailVerified()
+        && isValidManuscript(incoming())
+        && incoming().id == existing().id
+        && incoming().authorId == existing().authorId
+        && incoming().referenceNumber == existing().referenceNumber
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isEditorialStaff() ||
+          (
+            existing().authorId == request.auth.uid
+            && incoming().status in ['draft', 'submitted', 'withdrawn', 'awaiting_proof_approval', 'approved_for_publication']
+            && !(existing().status in ['published', 'rejected', 'cancelled'])
+            && (
+              (existing().status in ['draft', 'author_revision_required'] && incoming().diff(existing()).affectedKeys().hasOnly([
+                'title', 'subtitle', 'abstract', 'publicationType', 'category', 'discipline',
+                'language', 'keywords', 'targetAudience', 'coauthors', 'affiliation', 'wordCount',
+                'pageCount', 'objectives', 'requestedServices', 'publicationPreference',
+                'journalId', 'ethicsDeclaration', 'conflictOfInterest', 'fundingInfo',
+                'dataAvailability', 'declarationsAccepted', 'currentVersionNumber', 'status', 'updatedAt'
+              ])) ||
+              (incoming().status == 'withdrawn' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])) ||
+              (existing().status == 'awaiting_proof_approval' && incoming().status == 'approved_for_publication' && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']))
+            )
+          )
+        );
+
+      allow delete: if isValidId(manuscriptId) && isAdmin();
+
+      match /versions/{versionId} {
+        function parentManuscript() {
+          return get(/databases/$(database)/documents/manuscripts/$(manuscriptId)).data;
+        }
+
+        allow get: if isValidId(manuscriptId) && isValidId(versionId) && isSignedIn() && (
+          existing().manuscriptAuthorId == request.auth.uid || isEditorialStaff()
+        );
+        allow list: if isValidId(manuscriptId) && isSignedIn() && (
+          resource.data.manuscriptAuthorId == request.auth.uid || isEditorialStaff()
+        );
+        allow create: if isValidId(manuscriptId)
+          && isValidId(versionId)
+          && isEmailVerified()
+          && exists(/databases/$(database)/documents/manuscripts/$(manuscriptId))
+          && (parentManuscript().authorId == request.auth.uid || isEditorialStaff())
+          && isValidManuscriptVersion(incoming())
+          && incoming().id == versionId
+          && incoming().manuscriptId == manuscriptId
+          && incoming().manuscriptAuthorId == parentManuscript().authorId
+          && incoming().uploadedBy == request.auth.uid
+          && incoming().createdAt == request.time;
+        allow update, delete: if isValidId(manuscriptId) && isValidId(versionId) && isAdmin();
+      }
+
+      match /comments/{commentId} {
+        function parentMs() {
+          return get(/databases/$(database)/documents/manuscripts/$(manuscriptId)).data;
+        }
+
+        allow get: if isValidId(manuscriptId) && isValidId(commentId) && isSignedIn() && (
+          isEditorialStaff() ||
+          (existing().manuscriptAuthorId == request.auth.uid && existing().visibility == 'author_visible')
+        );
+        allow list: if isValidId(manuscriptId) && isSignedIn() && (
+          isEditorialStaff() ||
+          (resource.data.manuscriptAuthorId == request.auth.uid && resource.data.visibility == 'author_visible')
+        );
+        allow create: if isValidId(manuscriptId)
+          && isValidId(commentId)
+          && isEmailVerified()
+          && exists(/databases/$(database)/documents/manuscripts/$(manuscriptId))
+          && isValidComment(incoming())
+          && incoming().id == commentId
+          && incoming().manuscriptId == manuscriptId
+          && incoming().manuscriptAuthorId == parentMs().authorId
+          && incoming().authorId == request.auth.uid
+          && incoming().createdAt == request.time
+          && (
+            isEditorialStaff() ||
+            (parentMs().authorId == request.auth.uid && incoming().visibility == 'author_visible')
+          );
+        allow update, delete: if isValidId(manuscriptId) && isValidId(commentId) && isAdmin();
+      }
+
+      match /history/{historyId} {
+        function parentDoc() {
+          return get(/databases/$(database)/documents/manuscripts/$(manuscriptId)).data;
+        }
+
+        allow get: if isValidId(manuscriptId) && isValidId(historyId) && isSignedIn() && (
+          existing().manuscriptAuthorId == request.auth.uid || isEditorialStaff()
+        );
+        allow list: if isValidId(manuscriptId) && isSignedIn() && (
+          resource.data.manuscriptAuthorId == request.auth.uid || isEditorialStaff()
+        );
+        allow create: if isValidId(manuscriptId)
+          && isValidId(historyId)
+          && isEmailVerified()
+          && exists(/databases/$(database)/documents/manuscripts/$(manuscriptId))
+          && (parentDoc().authorId == request.auth.uid || isEditorialStaff())
+          && isValidHistory(incoming())
+          && incoming().id == historyId
+          && incoming().manuscriptId == manuscriptId
+          && incoming().manuscriptAuthorId == parentDoc().authorId
+          && incoming().actorId == request.auth.uid
+          && incoming().createdAt == request.time;
+        allow update, delete: if isValidId(manuscriptId) && isValidId(historyId) && isAdmin();
+      }
+    }
+
+    match /services/{serviceId} {
+      allow get: if isValidId(serviceId) && (existing().active == true || isAdmin() || isEditorialStaff());
+      allow list: if resource.data.active == true || isAdmin() || isEditorialStaff();
+      allow create: if isValidId(serviceId)
+        && isAdmin()
+        && isValidService(incoming())
+        && incoming().id == serviceId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(serviceId)
+        && isAdmin()
+        && isValidService(incoming())
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isValidId(serviceId) && isAdmin();
+    }
+
+    match /quotations/{quotationId} {
+      allow get: if isValidId(quotationId) && isSignedIn() && (
+        existing().authorId == request.auth.uid || isEditorialStaff() || isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.authorId == request.auth.uid || isEditorialStaff() || isAdmin()
+      );
+      allow create: if isValidId(quotationId)
+        && isEmailVerified()
+        && isValidQuotation(incoming())
+        && incoming().id == quotationId
+        && incoming().authorId == request.auth.uid
+        && exists(/databases/$(database)/documents/manuscripts/$(incoming().manuscriptId))
+        && get(/databases/$(database)/documents/manuscripts/$(incoming().manuscriptId)).data.authorId == request.auth.uid
+        && incoming().status == 'requested'
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(quotationId)
+        && isEmailVerified()
+        && isValidQuotation(incoming())
+        && incoming().id == existing().id
+        && incoming().authorId == existing().authorId
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin() || isEditorialStaff() ||
+          (
+            existing().authorId == request.auth.uid
+            && incoming().status in ['confirmed', 'cancelled']
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(quotationId) && isAdmin();
+    }
+
+    match /journals/{journalId} {
+      allow get: if isValidId(journalId) && (existing().active == true || isEditorialStaff());
+      allow list: if resource.data.active == true || isEditorialStaff();
+      allow create: if isValidId(journalId)
+        && isAdmin()
+        && isValidJournal(incoming())
+        && incoming().id == journalId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(journalId)
+        && isAdmin()
+        && isValidJournal(incoming())
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isValidId(journalId) && isAdmin();
+    }
+
+    match /publications/{publicationId} {
+      allow get: if isValidId(publicationId) && (
+        existing().releaseStatus == 'published' || isPublishingManager() ||
+        (isSignedIn() && existing().authorId == request.auth.uid)
+      );
+      allow list: if resource.data.releaseStatus == 'published' || isPublishingManager() ||
+        (isSignedIn() && resource.data.authorId == request.auth.uid);
+      allow create: if isValidId(publicationId)
+        && isPublishingManager()
+        && isValidPublication(incoming())
+        && incoming().id == publicationId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isValidId(publicationId)
+        && isPublishingManager()
+        && isValidPublication(incoming())
+        && incoming().id == existing().id
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isValidId(publicationId) && isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow get: if isValidId(notificationId) && isSignedIn() && (existing().userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isValidId(notificationId)
+        && isEmailVerified()
+        && isValidNotification(incoming())
+        && incoming().id == notificationId
+        && incoming().createdAt == request.time
+        && (incoming().userId == request.auth.uid || isEditorialStaff() || isAdmin());
+      allow update: if isValidId(notificationId)
+        && isEmailVerified()
+        && isValidNotification(incoming())
+        && incoming().id == existing().id
+        && incoming().userId == existing().userId
+        && incoming().createdAt == existing().createdAt
+        && (isAdmin() || (existing().userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['read'])));
+      allow delete: if isValidId(notificationId) && (isAdmin() || (isSignedIn() && existing().userId == request.auth.uid));
+    }
+
+    match /auditLogs/{logId} {
+      allow get, list: if isAdmin();
+      allow create: if isValidId(logId)
+        && isEmailVerified()
+        && isValidAuditLog(incoming())
+        && incoming().id == logId
+        && incoming().actorId == request.auth.uid
+        && incoming().createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /settings/{settingId} {
+      allow get: if isValidId(settingId);
+      allow list: if true;
+      allow create, update: if isValidId(settingId)
+        && isAdmin()
+        && isValidSettings(incoming())
+        && incoming().id == settingId
+        && incoming().updatedAt == request.time;
+      allow delete: if false;
+    }
+  }
+}

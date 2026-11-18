@@ -1,0 +1,367 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Private user account profile, roles, and institutional details.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 254 },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "roles": { "type": "array", "description": "Authorized roles assigned to the user." },
+        "accountStatus": { "type": "string", "enum": ["active", "suspended", "pending_verification"] },
+        "affiliation": { "type": "string", "maxLength": 200 },
+        "orcid": { "type": "string", "maxLength": 40 },
+        "bio": { "type": "string", "maxLength": 2000 },
+        "country": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName", "roles", "accountStatus", "createdAt", "updatedAt"]
+    },
+    "PublicAuthorProfile": {
+      "title": "PublicAuthorProfile",
+      "description": "Publicly visible author or researcher profile without private PII.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "affiliation": { "type": "string", "maxLength": 200 },
+        "bio": { "type": "string", "maxLength": 2000 },
+        "orcid": { "type": "string", "maxLength": 40 },
+        "discipline": { "type": "string", "maxLength": 120 },
+        "isSample": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "isSample", "updatedAt"]
+    },
+    "Manuscript": {
+      "title": "Manuscript",
+      "description": "Private manuscript submission and editorial project record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "referenceNumber": { "type": "string", "minLength": 4, "maxLength": 40 },
+        "authorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "title": { "type": "string", "minLength": 2, "maxLength": 300 },
+        "subtitle": { "type": "string", "maxLength": 300 },
+        "abstract": { "type": "string", "maxLength": 8000 },
+        "publicationType": {
+          "type": "string",
+          "enum": [
+            "book",
+            "general_article",
+            "academic_research",
+            "journal_submission",
+            "conference_paper",
+            "thesis_dissertation",
+            "research_report",
+            "other"
+          ]
+        },
+        "category": { "type": "string", "maxLength": 120 },
+        "discipline": { "type": "string", "maxLength": 120 },
+        "language": { "type": "string", "maxLength": 60 },
+        "keywords": { "type": "array" },
+        "targetAudience": { "type": "string", "maxLength": 200 },
+        "coauthors": { "type": "array" },
+        "affiliation": { "type": "string", "maxLength": 200 },
+        "wordCount": { "type": "integer" },
+        "pageCount": { "type": "integer" },
+        "objectives": { "type": "string", "maxLength": 2000 },
+        "requestedServices": { "type": "array" },
+        "publicationPreference": {
+          "type": "string",
+          "enum": ["digital_only", "print_only", "both", "editorial_only", "consultation"]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "draft",
+            "submitted",
+            "under_initial_review",
+            "assessment_completed",
+            "quotation_pending",
+            "awaiting_payment",
+            "editing_in_progress",
+            "author_revision_required",
+            "formatting_in_progress",
+            "awaiting_proof_approval",
+            "approved_for_publication",
+            "published",
+            "rejected",
+            "withdrawn",
+            "cancelled"
+          ]
+        },
+        "assignedEditorId": { "type": "string", "maxLength": 128 },
+        "assignedEditorName": { "type": "string", "maxLength": 120 },
+        "journalId": { "type": "string", "maxLength": 128 },
+        "ethicsDeclaration": { "type": "string", "maxLength": 1500 },
+        "conflictOfInterest": { "type": "string", "maxLength": 1000 },
+        "fundingInfo": { "type": "string", "maxLength": 1000 },
+        "dataAvailability": { "type": "string", "maxLength": 1000 },
+        "declarationsAccepted": { "type": "boolean" },
+        "currentVersionNumber": { "type": "integer" },
+        "isSample": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "referenceNumber", "authorId", "authorName", "title", "publicationType", "status", "currentVersionNumber", "declarationsAccepted", "isSample", "createdAt", "updatedAt"]
+    },
+    "ManuscriptVersion": {
+      "title": "ManuscriptVersion",
+      "description": "Versioned uploaded manuscript file metadata stored privately.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "manuscriptId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "manuscriptAuthorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "versionNumber": { "type": "integer" },
+        "fileName": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "mimeType": { "type": "string", "minLength": 3, "maxLength": 120 },
+        "sizeBytes": { "type": "integer" },
+        "storageKey": { "type": "string", "minLength": 1, "maxLength": 300 },
+        "sha256": { "type": "string", "maxLength": 128 },
+        "uploadedBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "uploadedByName": { "type": "string", "maxLength": 120 },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "manuscriptId", "manuscriptAuthorId", "versionNumber", "fileName", "mimeType", "sizeBytes", "storageKey", "uploadedBy", "createdAt"]
+    },
+    "EditorialComment": {
+      "title": "EditorialComment",
+      "description": "Author-visible feedback or confidential internal editorial note.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "manuscriptId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "manuscriptAuthorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "authorId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "authorName": { "type": "string", "maxLength": 120 },
+        "authorRole": { "type": "string", "maxLength": 60 },
+        "visibility": { "type": "string", "enum": ["author_visible", "internal_editorial", "confidential_review"] },
+        "commentType": { "type": "string", "enum": ["assessment", "revision_request", "editorial_note", "proof_feedback"] },
+        "body": { "type": "string", "minLength": 1, "maxLength": 5000 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "manuscriptId", "manuscriptAuthorId", "authorId", "authorName", "visibility", "commentType", "body", "createdAt"]
+    },
+    "ManuscriptHistory": {
+      "title": "ManuscriptHistory",
+      "description": "Immutable workflow audit trail entry for a manuscript.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "manuscriptId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "manuscriptAuthorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "actorName": { "type": "string", "maxLength": 120 },
+        "action": { "type": "string", "maxLength": 120 },
+        "fromStatus": { "type": "string", "maxLength": 60 },
+        "toStatus": { "type": "string", "maxLength": 60 },
+        "details": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "manuscriptId", "manuscriptAuthorId", "actorId", "actorName", "action", "createdAt"]
+    },
+    "PublishingService": {
+      "title": "PublishingService",
+      "description": "Configurable publishing service catalogue item.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "name": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "description": { "type": "string", "maxLength": 1500 },
+        "category": { "type": "string", "maxLength": 80 },
+        "pricingMethod": { "type": "string", "enum": ["flat_fee", "per_word", "per_page", "custom_quote"] },
+        "basePrice": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "estimatedTurnaround": { "type": "string", "maxLength": 80 },
+        "requirements": { "type": "string", "maxLength": 500 },
+        "active": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "description", "category", "pricingMethod", "basePrice", "currency", "active", "createdAt", "updatedAt"]
+    },
+    "ServiceQuotation": {
+      "title": "ServiceQuotation",
+      "description": "Author service request, quotation, and order status.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "manuscriptId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "manuscriptTitle": { "type": "string", "maxLength": 300 },
+        "authorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "serviceIds": { "type": "array" },
+        "notes": { "type": "string", "maxLength": 2000 },
+        "status": { "type": "string", "enum": ["requested", "estimated", "confirmed", "invoiced", "paid", "cancelled"] },
+        "estimatedAmount": { "type": "number" },
+        "confirmedAmount": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "manuscriptId", "authorId", "serviceIds", "status", "currency", "createdAt", "updatedAt"]
+    },
+    "AcademicJournal": {
+      "title": "AcademicJournal",
+      "description": "Academic journal record with review model and editorial configuration.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 2, "maxLength": 200 },
+        "issn": { "type": "string", "maxLength": 40 },
+        "identifierStatus": { "type": "string", "enum": ["unassigned", "pending_registration", "verified"] },
+        "description": { "type": "string", "maxLength": 2000 },
+        "discipline": { "type": "string", "maxLength": 120 },
+        "reviewModel": { "type": "string", "enum": ["single_anonymous", "double_anonymous", "open"] },
+        "editorInChief": { "type": "string", "maxLength": 120 },
+        "sections": { "type": "array" },
+        "active": { "type": "boolean" },
+        "isSample": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "discipline", "reviewModel", "active", "isSample", "createdAt", "updatedAt"]
+    },
+    "PublicationRecord": {
+      "title": "PublicationRecord",
+      "description": "Catalogued book, article, or research publication.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "manuscriptId": { "type": "string", "maxLength": 128 },
+        "authorId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "authorName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "title": { "type": "string", "minLength": 2, "maxLength": 300 },
+        "subtitle": { "type": "string", "maxLength": 300 },
+        "abstract": { "type": "string", "maxLength": 8000 },
+        "publicationType": { "type": "string", "maxLength": 60 },
+        "category": { "type": "string", "maxLength": 120 },
+        "format": { "type": "string", "enum": ["digital", "print", "both"] },
+        "accessType": { "type": "string", "enum": ["free", "paid"] },
+        "price": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "isbn": { "type": "string", "maxLength": 40 },
+        "issn": { "type": "string", "maxLength": 40 },
+        "doi": { "type": "string", "maxLength": 120 },
+        "identifierStatus": { "type": "string", "enum": ["unassigned", "pending_registration", "verified"] },
+        "coverUrl": { "type": "string", "maxLength": 500 },
+        "excerpt": { "type": "string", "maxLength": 12000 },
+        "releaseStatus": { "type": "string", "enum": ["approved", "published", "archived"] },
+        "isSample": { "type": "boolean" },
+        "publishedAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "authorId", "authorName", "title", "publicationType", "format", "accessType", "releaseStatus", "isSample", "createdAt", "updatedAt"]
+    },
+    "NotificationItem": {
+      "title": "NotificationItem",
+      "description": "User notification record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "message": { "type": "string", "minLength": 1, "maxLength": 600 },
+        "link": { "type": "string", "maxLength": 300 },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "userId", "title", "message", "read", "createdAt"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Platform audit log entry.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "actorName": { "type": "string", "maxLength": 120 },
+        "action": { "type": "string", "maxLength": 120 },
+        "targetType": { "type": "string", "maxLength": 80 },
+        "targetId": { "type": "string", "maxLength": 128 },
+        "summary": { "type": "string", "maxLength": 600 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "actorId", "action", "targetType", "targetId", "summary", "createdAt"]
+    },
+    "PlatformSettings": {
+      "title": "PlatformSettings",
+      "description": "Configurable platform brand, colors, business details, and draft notices.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "platformName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "tagline": { "type": "string", "maxLength": 200 },
+        "primaryColor": { "type": "string", "maxLength": 20 },
+        "accentColor": { "type": "string", "maxLength": 20 },
+        "contactEmail": { "type": "string", "maxLength": 200 },
+        "contactPhone": { "type": "string", "maxLength": 60 },
+        "businessAddress": { "type": "string", "maxLength": 300 },
+        "aiAssistanceEnabled": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "platformName", "primaryColor", "accentColor", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Private user account profile and RBAC roles."
+    },
+    "/publicProfiles/{userId}": {
+      "schema": { "$ref": "#/entities/PublicAuthorProfile" },
+      "description": "Publicly readable author and researcher profiles."
+    },
+    "/manuscripts/{manuscriptId}": {
+      "schema": { "$ref": "#/entities/Manuscript" },
+      "description": "Private manuscript submissions and editorial metadata."
+    },
+    "/manuscripts/{manuscriptId}/versions/{versionId}": {
+      "schema": { "$ref": "#/entities/ManuscriptVersion" },
+      "description": "Immutable file version records for a manuscript."
+    },
+    "/manuscripts/{manuscriptId}/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/EditorialComment" },
+      "description": "Editorial comments and confidential review notes."
+    },
+    "/manuscripts/{manuscriptId}/history/{historyId}": {
+      "schema": { "$ref": "#/entities/ManuscriptHistory" },
+      "description": "Workflow transition and activity audit trail."
+    },
+    "/services/{serviceId}": {
+      "schema": { "$ref": "#/entities/PublishingService" },
+      "description": "Configurable publishing services catalogue."
+    },
+    "/quotations/{quotationId}": {
+      "schema": { "$ref": "#/entities/ServiceQuotation" },
+      "description": "Quotation requests and confirmed service orders."
+    },
+    "/journals/{journalId}": {
+      "schema": { "$ref": "#/entities/AcademicJournal" },
+      "description": "Academic journals registry."
+    },
+    "/publications/{publicationId}": {
+      "schema": { "$ref": "#/entities/PublicationRecord" },
+      "description": "Approved and published works catalogue."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/NotificationItem" },
+      "description": "User notifications."
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Platform audit logs."
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/PlatformSettings" },
+      "description": "Platform brand and business settings."
+    }
+  }
+}
