@@ -20,6 +20,29 @@ A transition ruleset is therefore supplied. It preserves the old public-profile 
 
 **Important:** the temporary rules do **not** enforce new author opt-out privacy until the final rules are deployed. Do not leave them active after releasing the updated website. Do not accept author requests for profile privacy during this transition without clear safeguards.
 
+## Read-only live rules audit (recommended first action)
+
+A safe read-only verifier is included at `scripts/audit-live-firestore.py`. It requires no service-account key and uses the currently authenticated Google Cloud account (for example, Google Cloud Shell).
+
+Open [Google Cloud Shell](https://console.cloud.google.com/cloudshell/editor?project=subscription-tracker-92b0b), then run:
+
+```sh
+git clone https://github.com/dreamdaytech/Griots-Books-.git
+cd Griots-Books-
+git checkout feature/publication-discovery-phase1
+python3 scripts/audit-live-firestore.py
+```
+
+The script will:
+
+1. Verify that project and named database match the Griots Books application configuration.
+2. Read the real Firestore database metadata and the release associated with this named database.
+3. Download and back up the currently deployed rules to a private temporary directory **outside Git**.
+4. Compare the live source with `origin/main:firestore.rules` using SHA-256 checksums.
+5. Stop without changing anything if the baseline differs or API access is unavailable.
+
+**Do not paste or commit Google access tokens or service-account keys.** The only required output to share for review is the script's status and (if necessary) the differences between live rules and main, with any sensitive project-specific information redacted. The script does **not** release the new rules.
+
 ## Required preconditions
 
 1. Have access to the real Firebase project and specifically the named Firestore database, not `(default)`.

@@ -18,6 +18,8 @@ jobs:
         run: bun install --frozen-lockfile
       - name: Verify Firebase target configuration
         run: node scripts/verify-firebase-target.mjs
+      - name: Validate read-only Firebase audit script syntax
+        run: python3 -m py_compile scripts/audit-live-firestore.py
       - name: TypeScript validation
         run: bun run lint
       - name: Publishing workflow tests
