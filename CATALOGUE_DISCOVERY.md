@@ -11,7 +11,7 @@
 
 ## Database / Firestore deployment instructions
 
-**The repository's `firestore.rules` has been updated, but committing the file does not deploy the live Firebase rules.** Before relying on the new metadata form in a real Firebase environment, verify that the intended Firebase project is selected, review the new rules and deploy them through your normal controlled Firebase process.
+**The repository's `firestore.rules` has been updated, but committing the file does not deploy the live Firebase rules.** Review the named database and follow the **staged release runbook in [FIREBASE_DEPLOYMENT.md](FIREBASE_DEPLOYMENT.md)**. Applying the final privacy rules before updating the current public author-directory code would break its existing collection-list query; the runbook supplies a temporary compatibility ruleset for a short coordinated rollout.
 
 New *optional* publication fields: `isbnPrint`, `isbnDigital`, `language`, `edition`, `imprint`, `series`, `publicationYear`, `pageCount`, `subjects`, `tableOfContents`, `previewEnabled`.
 
