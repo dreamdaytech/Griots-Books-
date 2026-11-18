@@ -19,11 +19,11 @@ const SEED_TIME = '2026-10-15T10:00:00.000Z';
 
 export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   id: 'global',
-  platformName: 'Publishing Platform',
+  platformName: 'Griots Books',
   tagline: 'Independent Books, Peer-Reviewed Journals & Editorial Services',
   primaryColor: '#0F1E36',
   accentColor: '#0F766E',
-  contactEmail: 'editorial@publishing-platform.example',
+  contactEmail: 'editorial@griotsbooks.example',
   contactPhone: '+1 (555) 014-8920 [Draft Placeholder]',
   businessAddress: 'Editorial Offices — Configure in Administration Settings [Draft Placeholder]',
   aiAssistanceEnabled: false,

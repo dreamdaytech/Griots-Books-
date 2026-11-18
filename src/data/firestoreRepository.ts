@@ -14,9 +14,19 @@ import {
 import {
   canAccessAdminConsole,
   canAccessEditorialWorkspace,
+  canAccessPeerReviewWorkspace,
+  canManageReviewers,
   canReleasePublication,
+  canSubmitPeerReview,
+  canViewManuscript,
   filterVisibleComments,
 } from '../domain/rbac';
+import {
+  calculateOverallScore,
+  clampRubricScore,
+  filterVisiblePeerReviews,
+  validatePeerReviewInput,
+} from '../domain/peerReview';
 import type {
   AcademicJournal,
   AuditLog,
@@ -25,6 +35,8 @@ import type {
   ManuscriptHistory,
   ManuscriptVersion,
   NotificationItem,
+  PeerReview,
+  PeerReviewAnnotation,
   PlatformSettings,
   PublicAuthorProfile,
   PublicationRecord,
@@ -136,7 +148,7 @@ export class FirestoreRepository implements IPublishingRepository {
     const current = await this.getSettings();
     const merged = {
       id: 'global',
-      platformName: clamp(settings.platformName ?? current.platformName, 120) || 'Publishing Platform',
+      platformName: clamp(settings.platformName ?? current.platformName, 120) || 'Griots Books',
       tagline: clamp(settings.tagline ?? current.tagline, 200),
       primaryColor: clamp(settings.primaryColor ?? current.primaryColor, 20) || '#0F1E36',
       accentColor: clamp(settings.accentColor ?? current.accentColor, 20) || '#0F766E',
@@ -452,19 +464,37 @@ export class FirestoreRepository implements IPublishingRepository {
   async listManuscriptsForActor(actor: UserProfile): Promise<Manuscript[]> {
     try {
       const col = collection(db, 'manuscripts');
-      const q = canAccessEditorialWorkspace(actor)
-        ? query(col, orderBy('updatedAt', 'desc'))
-        : query(col, where('authorId', '==', actor.uid));
-      const snap = await getDocs(q);
-      const items = snap.docs.map((docSnap) => {
-        const d = docSnap.data();
-        return {
-          ...(d as Manuscript),
-          createdAt: tsToIso(d.createdAt),
-          updatedAt: tsToIso(d.updatedAt),
-        };
-      });
-      return items.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      if (canAccessEditorialWorkspace(actor)) {
+        const snap = await getDocs(query(col, orderBy('updatedAt', 'desc')));
+        return snap.docs
+          .map((docSnap) => {
+            const d = docSnap.data();
+            return {
+              ...(d as Manuscript),
+              createdAt: tsToIso(d.createdAt),
+              updatedAt: tsToIso(d.updatedAt),
+            };
+          })
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+      }
+
+      const queries = [getDocs(query(col, where('authorId', '==', actor.uid)))];
+      if (actor.roles.includes('reviewer')) {
+        queries.push(getDocs(query(col, where('assignedReviewerIds', 'array-contains', actor.uid))));
+      }
+      const snaps = await Promise.all(queries);
+      const map = new Map<string, Manuscript>();
+      for (const snap of snaps) {
+        for (const docSnap of snap.docs) {
+          const d = docSnap.data();
+          map.set(docSnap.id, {
+            ...(d as Manuscript),
+            createdAt: tsToIso(d.createdAt),
+            updatedAt: tsToIso(d.updatedAt),
+          });
+        }
+      }
+      return Array.from(map.values()).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, 'manuscripts');
     }
@@ -480,7 +510,7 @@ export class FirestoreRepository implements IPublishingRepository {
         createdAt: tsToIso(d.createdAt),
         updatedAt: tsToIso(d.updatedAt),
       };
-      if (ms.authorId !== actor.uid && !canAccessEditorialWorkspace(actor)) {
+      if (!canViewManuscript(actor, ms)) {
         throw new Error('Forbidden: You do not have permission to view this manuscript.');
       }
       return ms;
@@ -559,20 +589,31 @@ export class FirestoreRepository implements IPublishingRepository {
 
   async listManuscriptVersions(manuscriptId: string, actor: UserProfile): Promise<ManuscriptVersion[]> {
     try {
-      const q = query(
-        collection(db, 'manuscripts', manuscriptId, 'versions'),
-        where('manuscriptAuthorId', '==', actor.uid),
-      );
-      const targetQuery = canAccessEditorialWorkspace(actor)
-        ? collection(db, 'manuscripts', manuscriptId, 'versions')
-        : q;
-      const snap = await getDocs(targetQuery);
-      return snap.docs
-        .map((d) => ({
-          ...(d.data() as ManuscriptVersion),
-          createdAt: tsToIso(d.data().createdAt),
-        }))
-        .sort((a, b) => b.versionNumber - a.versionNumber);
+      const col = collection(db, 'manuscripts', manuscriptId, 'versions');
+      if (canAccessEditorialWorkspace(actor)) {
+        const snap = await getDocs(col);
+        return snap.docs
+          .map((d) => ({
+            ...(d.data() as ManuscriptVersion),
+            createdAt: tsToIso(d.data().createdAt),
+          }))
+          .sort((a, b) => b.versionNumber - a.versionNumber);
+      }
+      const queries = [getDocs(query(col, where('manuscriptAuthorId', '==', actor.uid)))];
+      if (actor.roles.includes('reviewer')) {
+        queries.push(getDocs(query(col, where('assignedReviewerIds', 'array-contains', actor.uid))));
+      }
+      const snaps = await Promise.all(queries);
+      const map = new Map<string, ManuscriptVersion>();
+      for (const snap of snaps) {
+        for (const d of snap.docs) {
+          map.set(d.id, {
+            ...(d.data() as ManuscriptVersion),
+            createdAt: tsToIso(d.data().createdAt),
+          });
+        }
+      }
+      return Array.from(map.values()).sort((a, b) => b.versionNumber - a.versionNumber);
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, `manuscripts/${manuscriptId}/versions`);
     }
@@ -623,6 +664,7 @@ export class FirestoreRepository implements IPublishingRepository {
       id: versionId,
       manuscriptId: manuscript.id,
       manuscriptAuthorId: manuscript.authorId,
+      assignedReviewerIds: (manuscript.assignedReviewerIds || []).slice(0, 15),
       versionNumber: nextVersion,
       fileName: clamp(uploaded.fileName, 255),
       mimeType: clamp(uploaded.mimeType, 120),
@@ -830,6 +872,199 @@ export class FirestoreRepository implements IPublishingRepository {
       };
     } catch (error) {
       handleFirestoreError(error, OperationType.UPDATE, `manuscripts/${manuscript.id}`);
+    }
+  }
+
+  async listAssignableReviewers(actor: UserProfile): Promise<UserProfile[]> {
+    if (!canManageReviewers(actor)) {
+      throw new Error('Unauthorized: Editorial permissions required to list reviewers.');
+    }
+    try {
+      const all = await this.listAllUsers();
+      return all
+        .filter((u) => u.accountStatus === 'active')
+        .sort((a, b) => {
+          const aRev = a.roles.includes('reviewer') ? 0 : 1;
+          const bRev = b.roles.includes('reviewer') ? 0 : 1;
+          if (aRev !== bRev) return aRev - bRev;
+          return a.displayName.localeCompare(b.displayName);
+        });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'users');
+    }
+  }
+
+  async assignReviewers(
+    manuscript: Manuscript,
+    reviewerIds: string[],
+    actor: UserProfile,
+  ): Promise<Manuscript> {
+    if (!canManageReviewers(actor)) {
+      throw new Error('Unauthorized: Editorial permissions required to assign peer reviewers.');
+    }
+    const cleanIds = Array.from(
+      new Set(reviewerIds.map((id) => clamp(id, 128)).filter((id) => id.length > 0 && id !== manuscript.authorId)),
+    ).slice(0, 15);
+    const previous = new Set(manuscript.assignedReviewerIds || []);
+    const newlyAdded = cleanIds.filter((id) => !previous.has(id));
+
+    try {
+      await updateDoc(doc(db, 'manuscripts', manuscript.id), {
+        assignedReviewerIds: cleanIds,
+        updatedAt: serverTimestamp(),
+      });
+      // Sync assignedReviewerIds on manuscript file versions so reviewers can list files
+      const verSnap = await getDocs(collection(db, 'manuscripts', manuscript.id, 'versions'));
+      await Promise.all(
+        verSnap.docs.map((verDoc) =>
+          updateDoc(verDoc.ref, { assignedReviewerIds: cleanIds }),
+        ),
+      );
+
+      const historyId = createId('hist');
+      await setDoc(doc(db, 'manuscripts', manuscript.id, 'history', historyId), {
+        id: historyId,
+        manuscriptId: manuscript.id,
+        manuscriptAuthorId: manuscript.authorId,
+        actorId: actor.uid,
+        actorName: clamp(actor.displayName, 120),
+        action: 'Peer reviewers updated',
+        details: `Assigned ${cleanIds.length} peer reviewer${cleanIds.length === 1 ? '' : 's'}.`,
+        createdAt: serverTimestamp(),
+      });
+
+      await Promise.all(
+        newlyAdded.map((reviewerId) =>
+          this.notifyUser(
+            reviewerId,
+            `Peer review assignment: ${manuscript.referenceNumber}`,
+            `${actor.displayName} assigned you to peer review "${manuscript.title}".`,
+            `/editorial/manuscripts/${manuscript.id}`,
+          ),
+        ),
+      );
+
+      await this.logAudit(
+        actor,
+        'assign_reviewers',
+        'manuscripts',
+        manuscript.id,
+        `Updated assigned reviewers (${cleanIds.length}) for ${manuscript.referenceNumber}`,
+      );
+
+      return {
+        ...manuscript,
+        assignedReviewerIds: cleanIds,
+        updatedAt: new Date().toISOString(),
+      };
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, `manuscripts/${manuscript.id}`);
+    }
+  }
+
+  async listPeerReviews(manuscriptId: string, actor: UserProfile): Promise<PeerReview[]> {
+    if (!canAccessPeerReviewWorkspace(actor)) {
+      throw new Error('Unauthorized: Editorial or Reviewer permissions required.');
+    }
+    try {
+      const col = collection(db, 'manuscripts', manuscriptId, 'reviews');
+      const targetQuery = canAccessEditorialWorkspace(actor)
+        ? col
+        : query(col, where('reviewerId', '==', actor.uid));
+      const snap = await getDocs(targetQuery);
+      const rows = snap.docs.map((d) => {
+        const data = d.data();
+        return {
+          ...(data as PeerReview),
+          createdAt: tsToIso(data.createdAt),
+          updatedAt: tsToIso(data.updatedAt),
+        };
+      });
+      return filterVisiblePeerReviews(actor, rows).sort((a, b) =>
+        b.updatedAt.localeCompare(a.updatedAt),
+      );
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, `manuscripts/${manuscriptId}/reviews`);
+    }
+  }
+
+  async savePeerReview(
+    manuscript: Manuscript,
+    review: Omit<PeerReview, 'id' | 'createdAt' | 'updatedAt'> & { id?: string },
+    actor: UserProfile,
+  ): Promise<PeerReview> {
+    if (!canSubmitPeerReview(actor, manuscript)) {
+      throw new Error('Forbidden: You are not assigned as a peer reviewer for this manuscript.');
+    }
+    const sanitizedAnnotations: PeerReviewAnnotation[] = (review.annotations || [])
+      .slice(0, 30)
+      .map((ann, index) => ({
+        id: clamp(ann.id || `ann_${index + 1}`, 128),
+        section: ann.section,
+        locationRef: clamp(ann.locationRef, 120),
+        severity: ann.severity,
+        comment: clamp(ann.comment, 1500),
+      }));
+
+    const normalizedScores = {
+      originality: clampRubricScore(review.rubricScores.originality),
+      rigor: clampRubricScore(review.rubricScores.rigor),
+      clarity: clampRubricScore(review.rubricScores.clarity),
+      citations: clampRubricScore(review.rubricScores.citations),
+    };
+
+    const validation = validatePeerReviewInput({
+      rubricScores: normalizedScores,
+      summaryFeedback: review.summaryFeedback,
+      annotations: sanitizedAnnotations,
+      status: review.status,
+    });
+    if (!validation.valid) {
+      throw new Error(validation.error || 'Invalid peer review submission.');
+    }
+
+    const reviewId = clamp(review.id || `rev_${actor.uid}`, 128);
+    const ref = doc(db, 'manuscripts', manuscript.id, 'reviews', reviewId);
+    const overallScore = calculateOverallScore(normalizedScores);
+
+    try {
+      const existingSnap = await getDoc(ref);
+      const payload = {
+        id: reviewId,
+        manuscriptId: manuscript.id,
+        manuscriptAuthorId: manuscript.authorId,
+        reviewerId: actor.uid,
+        reviewerName: clamp(actor.displayName, 120),
+        reviewerAffiliation: clamp(actor.affiliation || '', 200),
+        recommendation: review.recommendation,
+        rubricScores: normalizedScores,
+        overallScore,
+        summaryFeedback: clamp(review.summaryFeedback, 5000),
+        confidentialEditorNote: clamp(review.confidentialEditorNote || '', 2000),
+        annotations: sanitizedAnnotations,
+        status: review.status,
+        createdAt: existingSnap.exists() ? existingSnap.data().createdAt : serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      await setDoc(ref, payload);
+
+      if (review.status === 'submitted' && manuscript.assignedEditorId && manuscript.assignedEditorId !== actor.uid) {
+        await this.notifyUser(
+          manuscript.assignedEditorId,
+          `Peer review submitted: ${manuscript.referenceNumber}`,
+          `${actor.displayName} submitted a peer review (${overallScore.toFixed(1)}/5) for "${manuscript.title}".`,
+          `/editorial/manuscripts/${manuscript.id}`,
+        );
+      }
+
+      const nowIso = new Date().toISOString();
+      return {
+        ...payload,
+        createdAt: existingSnap.exists() ? tsToIso(existingSnap.data().createdAt) : nowIso,
+        updatedAt: nowIso,
+      };
+    } catch (error) {
+      handleFirestoreError(error, OperationType.WRITE, `manuscripts/${manuscript.id}/reviews/${reviewId}`);
     }
   }
 

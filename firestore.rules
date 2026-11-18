@@ -139,7 +139,7 @@ service cloud.firestore {
         ]
         && (!('assignedEditorId' in data) || (data.assignedEditorId is string && data.assignedEditorId.size() <= 128))
         && (!('assignedEditorName' in data) || (data.assignedEditorName is string && data.assignedEditorName.size() <= 120))
-        && (!('assignedReviewerIds' in data) || (data.assignedReviewerIds is list && data.assignedReviewerIds.size() <= 15))
+        && (!('assignedReviewerIds' in data) || (data.assignedReviewerIds is list && data.assignedReviewerIds.size() <= 15 && (data.assignedReviewerIds.size() == 0 || data.assignedReviewerIds[0] is string)))
         && (!('journalId' in data) || (data.journalId is string && data.journalId.size() <= 128))
         && (!('ethicsDeclaration' in data) || (data.ethicsDeclaration is string && data.ethicsDeclaration.size() <= 1500))
         && (!('conflictOfInterest' in data) || (data.conflictOfInterest is string && data.conflictOfInterest.size() <= 1000))
@@ -154,10 +154,11 @@ service cloud.firestore {
 
     function isValidManuscriptVersion(data) {
       return data.keys().hasAll(['id', 'manuscriptId', 'manuscriptAuthorId', 'versionNumber', 'fileName', 'mimeType', 'sizeBytes', 'storageKey', 'uploadedBy', 'createdAt'])
-        && data.keys().hasOnly(['id', 'manuscriptId', 'manuscriptAuthorId', 'versionNumber', 'fileName', 'mimeType', 'sizeBytes', 'storageKey', 'sha256', 'uploadedBy', 'uploadedByName', 'notes', 'createdAt'])
+        && data.keys().hasOnly(['id', 'manuscriptId', 'manuscriptAuthorId', 'assignedReviewerIds', 'versionNumber', 'fileName', 'mimeType', 'sizeBytes', 'storageKey', 'sha256', 'uploadedBy', 'uploadedByName', 'notes', 'createdAt'])
         && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
         && data.manuscriptId is string && data.manuscriptId.size() >= 1 && data.manuscriptId.size() <= 128
         && data.manuscriptAuthorId is string && data.manuscriptAuthorId.size() >= 1 && data.manuscriptAuthorId.size() <= 128
+        && (!('assignedReviewerIds' in data) || (data.assignedReviewerIds is list && data.assignedReviewerIds.size() <= 15 && (data.assignedReviewerIds.size() == 0 || data.assignedReviewerIds[0] is string)))
         && data.versionNumber is int && data.versionNumber >= 1 && data.versionNumber <= 500
         && data.fileName is string && data.fileName.size() >= 1 && data.fileName.size() <= 255
         && data.mimeType is string && data.mimeType.size() >= 3 && data.mimeType.size() <= 120
@@ -198,6 +199,42 @@ service cloud.firestore {
         && (!('toStatus' in data) || (data.toStatus is string && data.toStatus.size() <= 60))
         && (!('details' in data) || (data.details is string && data.details.size() <= 1000))
         && data.createdAt is timestamp;
+    }
+
+    function isValidPeerReview(data) {
+      return data.keys().hasAll([
+          'id', 'manuscriptId', 'manuscriptAuthorId', 'reviewerId', 'reviewerName',
+          'recommendation', 'rubricScores', 'overallScore', 'summaryFeedback',
+          'annotations', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'manuscriptId', 'manuscriptAuthorId', 'reviewerId', 'reviewerName',
+          'reviewerAffiliation', 'recommendation', 'rubricScores', 'overallScore',
+          'summaryFeedback', 'confidentialEditorNote', 'annotations', 'status',
+          'createdAt', 'updatedAt'
+        ])
+        && data.id is string && data.id.size() >= 1 && data.id.size() <= 128
+        && data.manuscriptId is string && data.manuscriptId.size() >= 1 && data.manuscriptId.size() <= 128
+        && data.manuscriptAuthorId is string && data.manuscriptAuthorId.size() >= 1 && data.manuscriptAuthorId.size() <= 128
+        && data.reviewerId is string && data.reviewerId.size() >= 1 && data.reviewerId.size() <= 128
+        && data.reviewerName is string && data.reviewerName.size() >= 1 && data.reviewerName.size() <= 120
+        && (!('reviewerAffiliation' in data) || (data.reviewerAffiliation is string && data.reviewerAffiliation.size() <= 200))
+        && data.recommendation in ['accept', 'minor_revision', 'major_revision', 'reject']
+        && data.rubricScores is map
+        && data.rubricScores.keys().hasAll(['originality', 'rigor', 'clarity', 'citations'])
+        && data.rubricScores.keys().hasOnly(['originality', 'rigor', 'clarity', 'citations'])
+        && data.rubricScores.originality is int && data.rubricScores.originality >= 1 && data.rubricScores.originality <= 5
+        && data.rubricScores.rigor is int && data.rubricScores.rigor >= 1 && data.rubricScores.rigor <= 5
+        && data.rubricScores.clarity is int && data.rubricScores.clarity >= 1 && data.rubricScores.clarity <= 5
+        && data.rubricScores.citations is int && data.rubricScores.citations >= 1 && data.rubricScores.citations <= 5
+        && data.overallScore is number && data.overallScore >= 1 && data.overallScore <= 5
+        && data.summaryFeedback is string && data.summaryFeedback.size() <= 5000
+        && (!('confidentialEditorNote' in data) || (data.confidentialEditorNote is string && data.confidentialEditorNote.size() <= 2000))
+        && data.annotations is list && data.annotations.size() <= 30 && (data.annotations.size() == 0 || data.annotations[0] is map)
+        && data.status in ['draft', 'submitted']
+        && (data.status != 'submitted' || data.summaryFeedback.size() >= 10)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
     }
 
     function isValidService(data) {
@@ -396,7 +433,8 @@ service cloud.firestore {
 
       allow list: if isSignedIn() && (
         resource.data.authorId == request.auth.uid ||
-        isEditorialStaff()
+        isEditorialStaff() ||
+        ('assignedReviewerIds' in resource.data && request.auth.uid in resource.data.assignedReviewerIds)
       );
 
       allow create: if isValidId(manuscriptId)
@@ -444,10 +482,14 @@ service cloud.firestore {
         }
 
         allow get: if isValidId(manuscriptId) && isValidId(versionId) && isSignedIn() && (
-          existing().manuscriptAuthorId == request.auth.uid || isEditorialStaff()
+          existing().manuscriptAuthorId == request.auth.uid ||
+          isEditorialStaff() ||
+          ('assignedReviewerIds' in existing() && request.auth.uid in existing().assignedReviewerIds)
         );
         allow list: if isValidId(manuscriptId) && isSignedIn() && (
-          resource.data.manuscriptAuthorId == request.auth.uid || isEditorialStaff()
+          resource.data.manuscriptAuthorId == request.auth.uid ||
+          isEditorialStaff() ||
+          ('assignedReviewerIds' in resource.data && request.auth.uid in resource.data.assignedReviewerIds)
         );
         allow create: if isValidId(manuscriptId)
           && isValidId(versionId)
@@ -460,7 +502,19 @@ service cloud.firestore {
           && incoming().manuscriptAuthorId == parentManuscript().authorId
           && incoming().uploadedBy == request.auth.uid
           && incoming().createdAt == request.time;
-        allow update, delete: if isValidId(manuscriptId) && isValidId(versionId) && isAdmin();
+        allow update: if isValidId(manuscriptId)
+          && isValidId(versionId)
+          && isEmailVerified()
+          && isValidManuscriptVersion(incoming())
+          && incoming().id == existing().id
+          && incoming().manuscriptId == existing().manuscriptId
+          && incoming().manuscriptAuthorId == existing().manuscriptAuthorId
+          && incoming().createdAt == existing().createdAt
+          && (
+            isAdmin() ||
+            (isEditorialStaff() && incoming().diff(existing()).affectedKeys().hasOnly(['assignedReviewerIds']))
+          );
+        allow delete: if isValidId(manuscriptId) && isValidId(versionId) && isAdmin();
       }
 
       match /comments/{commentId} {
@@ -516,6 +570,61 @@ service cloud.firestore {
           && incoming().actorId == request.auth.uid
           && incoming().createdAt == request.time;
         allow update, delete: if isValidId(manuscriptId) && isValidId(historyId) && isAdmin();
+      }
+
+      match /reviews/{reviewId} {
+        function parentMsReview() {
+          return get(/databases/$(database)/documents/manuscripts/$(manuscriptId)).data;
+        }
+
+        function isAssignedReviewer(parentData) {
+          return ('assignedReviewerIds' in parentData)
+            && (request.auth.uid in parentData.assignedReviewerIds)
+            && parentData.authorId != request.auth.uid;
+        }
+
+        allow get: if isValidId(manuscriptId) && isValidId(reviewId) && isSignedIn() && (
+          isEditorialStaff() || existing().reviewerId == request.auth.uid
+        );
+        allow list: if isValidId(manuscriptId) && isSignedIn() && (
+          isEditorialStaff() || resource.data.reviewerId == request.auth.uid
+        );
+        allow create: if isValidId(manuscriptId)
+          && isValidId(reviewId)
+          && isEmailVerified()
+          && isValidPeerReview(incoming())
+          && incoming().id == reviewId
+          && incoming().manuscriptId == manuscriptId
+          && incoming().reviewerId == request.auth.uid
+          && incoming().createdAt == request.time
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/manuscripts/$(manuscriptId))
+          && incoming().manuscriptAuthorId == parentMsReview().authorId
+          && (isEditorialStaff() || isAssignedReviewer(parentMsReview()));
+        allow update: if isValidId(manuscriptId)
+          && isValidId(reviewId)
+          && isEmailVerified()
+          && isValidPeerReview(incoming())
+          && incoming().id == existing().id
+          && incoming().manuscriptId == existing().manuscriptId
+          && incoming().manuscriptAuthorId == existing().manuscriptAuthorId
+          && incoming().reviewerId == existing().reviewerId
+          && incoming().createdAt == existing().createdAt
+          && incoming().updatedAt == request.time
+          && exists(/databases/$(database)/documents/manuscripts/$(manuscriptId))
+          && (
+            isAdmin() ||
+            (
+              existing().reviewerId == request.auth.uid
+              && (isEditorialStaff() || isAssignedReviewer(parentMsReview()))
+              && incoming().diff(existing()).affectedKeys().hasOnly([
+                'reviewerName', 'reviewerAffiliation', 'recommendation', 'rubricScores',
+                'overallScore', 'summaryFeedback', 'confidentialEditorNote',
+                'annotations', 'status', 'updatedAt'
+              ])
+            )
+          );
+        allow delete: if isValidId(manuscriptId) && isValidId(reviewId) && isAdmin();
       }
     }
 
@@ -620,7 +729,7 @@ service cloud.firestore {
         && isValidNotification(incoming())
         && incoming().id == notificationId
         && incoming().createdAt == request.time
-        && (incoming().userId == request.auth.uid || isEditorialStaff() || isAdmin());
+        && (incoming().userId == request.auth.uid || isEditorialStaff() || isAdmin() || hasAnyRole(['reviewer']));
       allow update: if isValidId(notificationId)
         && isEmailVerified()
         && isValidNotification(incoming())

@@ -61,6 +61,190 @@ export const STATUS_TONE: Record<ManuscriptStatus, 'neutral' | 'info' | 'warning
   cancelled: 'danger',
 };
 
+export interface EditorialStage {
+  key: 'draft' | 'review' | 'editing' | 'proofing' | 'accepted' | 'published';
+  label: string;
+}
+
+export const EDITORIAL_WORKFLOW_STAGES: EditorialStage[] = [
+  { key: 'draft', label: 'Draft' },
+  { key: 'review', label: 'Review' },
+  { key: 'editing', label: 'Editing' },
+  { key: 'proofing', label: 'Proofing' },
+  { key: 'accepted', label: 'Accepted' },
+  { key: 'published', label: 'Published' },
+];
+
+export type SegmentFillWidth = 'w-0' | 'w-1/2' | 'w-2/3' | 'w-3/4' | 'w-full';
+
+export interface EditorialProgress {
+  status: ManuscriptStatus;
+  label: string;
+  fullLabel: string;
+  stageIndex: number;
+  stepNumber: number;
+  totalStages: number;
+  percent: number;
+  activeSegmentFill: SegmentFillWidth;
+  tone: 'neutral' | 'info' | 'warning' | 'success' | 'danger';
+  stageHint: string;
+  actionRequired: boolean;
+  isHalted: boolean;
+}
+
+const PROGRESS_CONFIG: Record<
+  ManuscriptStatus,
+  Omit<EditorialProgress, 'status' | 'fullLabel' | 'stepNumber' | 'totalStages' | 'tone'>
+> = {
+  draft: {
+    label: 'Draft',
+    stageIndex: 0,
+    percent: 12,
+    activeSegmentFill: 'w-1/2',
+    stageHint: 'Resume and submit draft',
+    actionRequired: false,
+    isHalted: false,
+  },
+  submitted: {
+    label: 'Submitted',
+    stageIndex: 1,
+    percent: 25,
+    activeSegmentFill: 'w-1/2',
+    stageHint: 'Awaiting editorial assignment',
+    actionRequired: false,
+    isHalted: false,
+  },
+  under_initial_review: {
+    label: 'Under Review',
+    stageIndex: 1,
+    percent: 33,
+    activeSegmentFill: 'w-3/4',
+    stageHint: 'Editorial & peer screening',
+    actionRequired: false,
+    isHalted: false,
+  },
+  assessment_completed: {
+    label: 'Assessment Complete',
+    stageIndex: 1,
+    percent: 42,
+    activeSegmentFill: 'w-full',
+    stageHint: 'Preparing editorial decision',
+    actionRequired: false,
+    isHalted: false,
+  },
+  author_revision_required: {
+    label: 'Revision Requested',
+    stageIndex: 1,
+    percent: 38,
+    activeSegmentFill: 'w-2/3',
+    stageHint: 'Upload revised manuscript',
+    actionRequired: true,
+    isHalted: false,
+  },
+  quotation_pending: {
+    label: 'Quotation Pending',
+    stageIndex: 2,
+    percent: 48,
+    activeSegmentFill: 'w-1/2',
+    stageHint: 'Awaiting service estimate',
+    actionRequired: true,
+    isHalted: false,
+  },
+  awaiting_payment: {
+    label: 'Awaiting Payment',
+    stageIndex: 2,
+    percent: 54,
+    activeSegmentFill: 'w-2/3',
+    stageHint: 'Confirm service quotation',
+    actionRequired: true,
+    isHalted: false,
+  },
+  editing_in_progress: {
+    label: 'Editing',
+    stageIndex: 2,
+    percent: 62,
+    activeSegmentFill: 'w-3/4',
+    stageHint: 'Copyediting & line polish',
+    actionRequired: false,
+    isHalted: false,
+  },
+  formatting_in_progress: {
+    label: 'Formatting',
+    stageIndex: 3,
+    percent: 74,
+    activeSegmentFill: 'w-2/3',
+    stageHint: 'Typesetting & layout prep',
+    actionRequired: false,
+    isHalted: false,
+  },
+  awaiting_proof_approval: {
+    label: 'Proof Approval',
+    stageIndex: 3,
+    percent: 83,
+    activeSegmentFill: 'w-3/4',
+    stageHint: 'Review & approve final proof',
+    actionRequired: true,
+    isHalted: false,
+  },
+  approved_for_publication: {
+    label: 'Accepted',
+    stageIndex: 4,
+    percent: 92,
+    activeSegmentFill: 'w-full',
+    stageHint: 'Queued for catalogue release',
+    actionRequired: false,
+    isHalted: false,
+  },
+  published: {
+    label: 'Published',
+    stageIndex: 5,
+    percent: 100,
+    activeSegmentFill: 'w-full',
+    stageHint: 'Live in catalogue',
+    actionRequired: false,
+    isHalted: false,
+  },
+  rejected: {
+    label: 'Rejected',
+    stageIndex: 1,
+    percent: 33,
+    activeSegmentFill: 'w-full',
+    stageHint: 'Closed after editorial review',
+    actionRequired: false,
+    isHalted: true,
+  },
+  withdrawn: {
+    label: 'Withdrawn',
+    stageIndex: 1,
+    percent: 25,
+    activeSegmentFill: 'w-full',
+    stageHint: 'Withdrawn by author',
+    actionRequired: false,
+    isHalted: true,
+  },
+  cancelled: {
+    label: 'Cancelled',
+    stageIndex: 1,
+    percent: 25,
+    activeSegmentFill: 'w-full',
+    stageHint: 'Submission cancelled',
+    actionRequired: false,
+    isHalted: true,
+  },
+};
+
+export function getEditorialProgress(status: ManuscriptStatus): EditorialProgress {
+  const cfg = PROGRESS_CONFIG[status] ?? PROGRESS_CONFIG.draft;
+  return {
+    status,
+    fullLabel: STATUS_LABELS[status] || status,
+    stepNumber: cfg.stageIndex + 1,
+    totalStages: EDITORIAL_WORKFLOW_STAGES.length,
+    tone: STATUS_TONE[status] || 'neutral',
+    ...cfg,
+  };
+}
+
 const TERMINAL_STATUSES: ManuscriptStatus[] = ['published', 'rejected', 'withdrawn', 'cancelled'];
 
 const BASE_EDITORIAL_TRANSITIONS: Record<ManuscriptStatus, ManuscriptStatus[]> = {

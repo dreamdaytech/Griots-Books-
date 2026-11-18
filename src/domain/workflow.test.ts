@@ -12,10 +12,13 @@ import {
 import {
   calculateQuotationEstimate,
   canTransitionStatus,
+  EDITORIAL_WORKFLOW_STAGES,
   generateReferenceNumber,
+  getEditorialProgress,
+  STATUS_LABELS,
   validateFileUploadMeta,
 } from './workflow';
-import type { EditorialComment, PublishingService, UserProfile } from './types';
+import type { EditorialComment, ManuscriptStatus, PublishingService, UserProfile } from './types';
 
 const now = '2026-11-18T12:00:00.000Z';
 
@@ -221,3 +224,54 @@ test('Reference number generator and quotation calculator work deterministically
   assert.equal(est.currency, 'USD');
   assert.equal(est.hasCustomQuote, false);
 });
+
+test('Editorial progress mapping covers all workflow statuses and preserves stage ordering', () => {
+  const allStatuses = Object.keys(STATUS_LABELS) as ManuscriptStatus[];
+  for (const status of allStatuses) {
+    const progress = getEditorialProgress(status);
+    assert.equal(progress.totalStages, EDITORIAL_WORKFLOW_STAGES.length);
+    assert.ok(progress.stageIndex >= 0 && progress.stageIndex < EDITORIAL_WORKFLOW_STAGES.length);
+    assert.equal(progress.stepNumber, progress.stageIndex + 1);
+    assert.ok(progress.percent > 0 && progress.percent <= 100);
+    assert.ok(progress.label.length > 0);
+  }
+
+  const orderedChain: ManuscriptStatus[] = [
+    'draft',
+    'submitted',
+    'under_initial_review',
+    'editing_in_progress',
+    'formatting_in_progress',
+    'approved_for_publication',
+    'published',
+  ];
+  for (let i = 1; i < orderedChain.length; i++) {
+    const prev = getEditorialProgress(orderedChain[i - 1]);
+    const curr = getEditorialProgress(orderedChain[i]);
+    assert.ok(curr.percent > prev.percent, `${orderedChain[i]} should advance beyond ${orderedChain[i - 1]}`);
+  }
+
+  const review = getEditorialProgress('under_initial_review');
+  assert.equal(review.label, 'Under Review');
+  assert.equal(review.actionRequired, false);
+
+  const revision = getEditorialProgress('author_revision_required');
+  assert.equal(revision.label, 'Revision Requested');
+  assert.equal(revision.tone, 'warning');
+  assert.equal(revision.actionRequired, true);
+
+  const accepted = getEditorialProgress('approved_for_publication');
+  assert.equal(accepted.label, 'Accepted');
+  assert.equal(accepted.tone, 'success');
+  assert.equal(accepted.stepNumber, 5);
+
+  const published = getEditorialProgress('published');
+  assert.equal(published.percent, 100);
+  assert.equal(published.isHalted, false);
+
+  const rejected = getEditorialProgress('rejected');
+  assert.equal(rejected.label, 'Rejected');
+  assert.equal(rejected.tone, 'danger');
+  assert.equal(rejected.isHalted, true);
+});
+

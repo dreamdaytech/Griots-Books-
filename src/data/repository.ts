@@ -6,6 +6,7 @@ import type {
   ManuscriptHistory,
   ManuscriptVersion,
   NotificationItem,
+  PeerReview,
   PlatformSettings,
   PublicAuthorProfile,
   PublicationRecord,
@@ -56,7 +57,7 @@ export interface IPublishingRepository {
   ): Promise<ManuscriptVersion>;
   getVersionDownloadUrl(manuscriptId: string, storageKey: string): string;
 
-  // Editorial Comments & History
+  // Editorial Comments, Peer Reviews & History
   listManuscriptComments(manuscriptId: string, actor: UserProfile): Promise<EditorialComment[]>;
   addManuscriptComment(
     manuscript: Manuscript,
@@ -76,6 +77,20 @@ export interface IPublishingRepository {
     editorName: string,
     actor: UserProfile,
   ): Promise<Manuscript>;
+
+  // Peer Review Module
+  listAssignableReviewers(actor: UserProfile): Promise<UserProfile[]>;
+  assignReviewers(
+    manuscript: Manuscript,
+    reviewerIds: string[],
+    actor: UserProfile,
+  ): Promise<Manuscript>;
+  listPeerReviews(manuscriptId: string, actor: UserProfile): Promise<PeerReview[]>;
+  savePeerReview(
+    manuscript: Manuscript,
+    review: Omit<PeerReview, 'id' | 'createdAt' | 'updatedAt'> & { id?: string },
+    actor: UserProfile,
+  ): Promise<PeerReview>;
 
   // Quotations & Orders
   listQuotationsForActor(actor: UserProfile): Promise<ServiceQuotation[]>;

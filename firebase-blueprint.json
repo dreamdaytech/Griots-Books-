@@ -97,6 +97,7 @@
         },
         "assignedEditorId": { "type": "string", "maxLength": 128 },
         "assignedEditorName": { "type": "string", "maxLength": 120 },
+        "assignedReviewerIds": { "type": "array" },
         "journalId": { "type": "string", "maxLength": 128 },
         "ethicsDeclaration": { "type": "string", "maxLength": 1500 },
         "conflictOfInterest": { "type": "string", "maxLength": 1000 },
@@ -118,6 +119,7 @@
         "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "manuscriptId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
         "manuscriptAuthorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "assignedReviewerIds": { "type": "array" },
         "versionNumber": { "type": "integer" },
         "fileName": { "type": "string", "minLength": 1, "maxLength": 255 },
         "mimeType": { "type": "string", "minLength": 3, "maxLength": 120 },
@@ -166,6 +168,29 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "manuscriptId", "manuscriptAuthorId", "actorId", "actorName", "action", "createdAt"]
+    },
+    "PeerReview": {
+      "title": "PeerReview",
+      "description": "Structured rubric evaluation and section-targeted annotations submitted by a selected reviewer.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "manuscriptId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "manuscriptAuthorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reviewerId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "reviewerName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "reviewerAffiliation": { "type": "string", "maxLength": 200 },
+        "recommendation": { "type": "string", "enum": ["accept", "minor_revision", "major_revision", "reject"] },
+        "rubricScores": { "type": "object" },
+        "overallScore": { "type": "number" },
+        "summaryFeedback": { "type": "string", "maxLength": 5000 },
+        "confidentialEditorNote": { "type": "string", "maxLength": 2000 },
+        "annotations": { "type": "array" },
+        "status": { "type": "string", "enum": ["draft", "submitted"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "manuscriptId", "manuscriptAuthorId", "reviewerId", "reviewerName", "recommendation", "rubricScores", "overallScore", "summaryFeedback", "annotations", "status", "createdAt", "updatedAt"]
     },
     "PublishingService": {
       "title": "PublishingService",
@@ -334,6 +359,10 @@
     "/manuscripts/{manuscriptId}/history/{historyId}": {
       "schema": { "$ref": "#/entities/ManuscriptHistory" },
       "description": "Workflow transition and activity audit trail."
+    },
+    "/manuscripts/{manuscriptId}/reviews/{reviewId}": {
+      "schema": { "$ref": "#/entities/PeerReview" },
+      "description": "Structured rubric assessments and section-specific annotations by assigned peer reviewers."
     },
     "/services/{serviceId}": {
       "schema": { "$ref": "#/entities/PublishingService" },

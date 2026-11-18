@@ -22,6 +22,7 @@ import { usePlatform } from '../context/PlatformContext';
 import {
   canAccessAdminConsole,
   canAccessEditorialWorkspace,
+  canAccessPeerReviewWorkspace,
   canReleasePublication,
 } from '../domain/rbac';
 
@@ -57,8 +58,15 @@ export function PortalLayout({
     { to: '/dashboard/profile', label: 'Profile & Settings', icon: <Settings className="w-4 h-4" /> },
   ];
 
-  const editorialNav: NavItem[] = canAccessEditorialWorkspace(user)
-    ? [{ to: '/editorial', label: 'Editorial Queue', icon: <BookMarked className="w-4 h-4" /> }]
+  const isEditorialStaff = canAccessEditorialWorkspace(user);
+  const editorialNav: NavItem[] = canAccessPeerReviewWorkspace(user)
+    ? [
+        {
+          to: '/editorial',
+          label: isEditorialStaff ? 'Editorial Queue' : 'Peer Review Queue',
+          icon: <BookMarked className="w-4 h-4" />,
+        },
+      ]
     : [];
 
   const isAdmin = canAccessAdminConsole(user);
@@ -124,7 +132,7 @@ export function PortalLayout({
           {editorialNav.length > 0 && (
             <div>
               <p className="px-3 mb-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Editorial Desk
+                {isEditorialStaff ? 'Editorial Desk' : 'Peer Review Desk'}
               </p>
               <div className="space-y-1">{renderLinks(editorialNav)}</div>
             </div>

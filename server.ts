@@ -8,10 +8,19 @@ import { createServer as createViteServer } from 'vite';
 import {
   canAccessAdminConsole,
   canAccessEditorialWorkspace,
+  canAccessPeerReviewWorkspace,
+  canManageReviewers,
   canReleasePublication,
+  canSubmitPeerReview,
   canViewManuscript,
   filterVisibleComments,
 } from './src/domain/rbac.ts';
+import {
+  calculateOverallScore,
+  clampRubricScore,
+  filterVisiblePeerReviews,
+  validatePeerReviewInput,
+} from './src/domain/peerReview.ts';
 import type {
   AcademicJournal,
   AuditLog,
@@ -20,6 +29,8 @@ import type {
   ManuscriptHistory,
   ManuscriptVersion,
   NotificationItem,
+  PeerReview,
+  PeerReviewAnnotation,
   PlatformSettings,
   PublicAuthorProfile,
   PublicationRecord,
@@ -55,6 +66,7 @@ interface SandboxDatabase {
   versions: ManuscriptVersion[];
   comments: EditorialComment[];
   history: ManuscriptHistory[];
+  reviews: PeerReview[];
   services: PublishingService[];
   quotations: ServiceQuotation[];
   journals: AcademicJournal[];
@@ -68,7 +80,7 @@ function createInitialSandboxDb(): SandboxDatabase {
   const users: UserProfile[] = [
     {
       uid: 'sandbox_author',
-      email: 'author.sample@publishing-platform.example',
+      email: 'author.sample@griotsbooks.example',
       displayName: 'Elena Rostova (Sample Author)',
       roles: ['author'],
       accountStatus: 'active',
@@ -80,7 +92,7 @@ function createInitialSandboxDb(): SandboxDatabase {
     },
     {
       uid: 'sandbox_author_2',
-      email: 'other.sample@publishing-platform.example',
+      email: 'other.sample@griotsbooks.example',
       displayName: 'Marcus Chen (Sample Author 2)',
       roles: ['author'],
       accountStatus: 'active',
@@ -92,7 +104,7 @@ function createInitialSandboxDb(): SandboxDatabase {
     },
     {
       uid: 'sandbox_researcher',
-      email: 'researcher.sample@publishing-platform.example',
+      email: 'researcher.sample@griotsbooks.example',
       displayName: 'Dr. Amara Okafor (Sample Researcher)',
       roles: ['researcher', 'author'],
       accountStatus: 'active',
@@ -105,7 +117,7 @@ function createInitialSandboxDb(): SandboxDatabase {
     },
     {
       uid: 'sandbox_editor',
-      email: 'editor.sample@publishing-platform.example',
+      email: 'editor.sample@griotsbooks.example',
       displayName: 'Clara Holloway (Sample Editor)',
       roles: ['editor', 'managing_editor'],
       accountStatus: 'active',
@@ -116,8 +128,21 @@ function createInitialSandboxDb(): SandboxDatabase {
       updatedAt: now,
     },
     {
+      uid: 'sandbox_reviewer',
+      email: 'reviewer.sample@griotsbooks.example',
+      displayName: 'Dr. Samuel Adeyemi (Sample Peer Reviewer)',
+      roles: ['reviewer'],
+      accountStatus: 'active',
+      affiliation: 'West African Architectural Archive (Sample)',
+      orcid: '0000-0003-4198-2241',
+      bio: 'External architectural history and material culture peer reviewer.',
+      country: 'Ghana',
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
       uid: 'sandbox_admin',
-      email: 'admin.sample@publishing-platform.example',
+      email: 'admin.sample@griotsbooks.example',
       displayName: 'Arthur Pendelton (Sample Admin & Manager)',
       roles: ['publishing_manager', 'platform_admin', 'super_admin'],
       accountStatus: 'active',
@@ -156,11 +181,117 @@ function createInitialSandboxDb(): SandboxDatabase {
     updatedAt: now,
   };
 
+  const sampleAuthorManuscripts: Manuscript[] = [
+    {
+      id: 'ms_sample_author_review',
+      referenceNumber: 'MS-2026-0101',
+      authorId: 'sandbox_author',
+      authorName: 'Elena Rostova (Sample Author)',
+      title: 'Civic Architecture & Timber Commons (Sample)',
+      subtitle: 'Regional Typologies in Northern Europe',
+      abstract: 'Sample book manuscript currently undergoing initial editorial screening and reader assessment.',
+      publicationType: 'book',
+      category: 'Architecture & Design',
+      discipline: 'Architectural History',
+      language: 'English',
+      keywords: ['timber', 'civic architecture', 'sample'],
+      wordCount: 54000,
+      pageCount: 228,
+      requestedServices: ['srv_eval', 'srv_copyedit'],
+      publicationPreference: 'both',
+      status: 'under_initial_review',
+      assignedEditorId: 'sandbox_editor',
+      assignedEditorName: 'Clara Holloway (Sample Editor)',
+      assignedReviewerIds: ['sandbox_reviewer'],
+      declarationsAccepted: true,
+      currentVersionNumber: 1,
+      isSample: true,
+      createdAt: now,
+      updatedAt: '2026-10-24T14:20:00.000Z',
+    },
+    {
+      id: 'ms_sample_author_revision',
+      referenceNumber: 'MS-2026-0103',
+      authorId: 'sandbox_author',
+      authorName: 'Elena Rostova (Sample Author)',
+      title: 'Urban Acoustic Ecology Field Notes (Sample)',
+      subtitle: 'Soundscapes of Post-Industrial Riverfronts',
+      abstract: 'Sample general article awaiting minor methodology clarifications requested by the editorial board.',
+      publicationType: 'general_article',
+      category: 'Urban Studies',
+      discipline: 'Environmental Humanities',
+      language: 'English',
+      keywords: ['acoustics', 'urban ecology', 'sample'],
+      wordCount: 4200,
+      pageCount: 16,
+      requestedServices: ['srv_copyedit'],
+      publicationPreference: 'digital_only',
+      status: 'author_revision_required',
+      assignedEditorId: 'sandbox_editor',
+      assignedEditorName: 'Clara Holloway (Sample Editor)',
+      declarationsAccepted: true,
+      currentVersionNumber: 1,
+      isSample: true,
+      createdAt: now,
+      updatedAt: '2026-10-28T09:45:00.000Z',
+    },
+    {
+      id: 'ms_sample_author_accepted',
+      referenceNumber: 'MS-2026-0104',
+      authorId: 'sandbox_author',
+      authorName: 'Elena Rostova (Sample Author)',
+      title: 'Independent Press Stewardship & Archival Craft (Sample)',
+      subtitle: 'Monograph Production Guide',
+      abstract: 'Sample accepted manuscript ready for catalogue release after final proof approval.',
+      publicationType: 'book',
+      category: 'Publishing Practice',
+      discipline: 'Editorial Studies',
+      language: 'English',
+      keywords: ['publishing', 'archival', 'sample'],
+      wordCount: 38500,
+      pageCount: 164,
+      requestedServices: ['srv_formatting', 'srv_cover'],
+      publicationPreference: 'both',
+      status: 'approved_for_publication',
+      assignedEditorId: 'sandbox_editor',
+      assignedEditorName: 'Clara Holloway (Sample Editor)',
+      declarationsAccepted: true,
+      currentVersionNumber: 2,
+      isSample: true,
+      createdAt: now,
+      updatedAt: '2026-11-04T16:10:00.000Z',
+    },
+    {
+      id: 'ms_sample_author_draft',
+      referenceNumber: 'MS-2026-0105',
+      authorId: 'sandbox_author',
+      authorName: 'Elena Rostova (Sample Author)',
+      title: 'Notes on Hand-Sewn Archival Bindings (Sample)',
+      subtitle: 'Working Draft',
+      abstract: 'Unsubmitted draft manuscript demonstrating resumable wizard state and initial Draft progress tracking.',
+      publicationType: 'general_article',
+      category: 'Book Arts',
+      discipline: 'Material Culture',
+      language: 'English',
+      keywords: ['bookbinding', 'craft', 'sample'],
+      wordCount: 2800,
+      pageCount: 11,
+      requestedServices: [],
+      publicationPreference: 'digital_only',
+      status: 'draft',
+      declarationsAccepted: false,
+      currentVersionNumber: 0,
+      isSample: true,
+      createdAt: now,
+      updatedAt: '2026-11-10T11:30:00.000Z',
+    },
+  ];
+
   return {
     settings: { ...DEFAULT_PLATFORM_SETTINGS },
     users,
     publicProfiles: [...SAMPLE_PUBLIC_AUTHORS],
-    manuscripts: [sampleManuscriptPrivate],
+    manuscripts: [...sampleAuthorManuscripts, sampleManuscriptPrivate],
     versions: [],
     comments: [
       {
@@ -175,6 +306,18 @@ function createInitialSandboxDb(): SandboxDatabase {
         body: 'Internal note: verify engineering appendix figures before assigning copyeditor.',
         createdAt: now,
       },
+      {
+        id: 'cmt_sample_author_rev',
+        manuscriptId: 'ms_sample_author_revision',
+        manuscriptAuthorId: 'sandbox_author',
+        authorId: 'sandbox_editor',
+        authorName: 'Clara Holloway (Sample Editor)',
+        authorRole: 'managing_editor',
+        visibility: 'author_visible',
+        commentType: 'revision_request',
+        body: 'Please expand Section 2 with recording site coordinates and upload your revised manuscript.',
+        createdAt: '2026-10-28T09:45:00.000Z',
+      },
     ],
     history: [
       {
@@ -188,6 +331,83 @@ function createInitialSandboxDb(): SandboxDatabase {
         toStatus: 'submitted',
         details: 'Initial sample submission MS-2026-0102',
         createdAt: now,
+      },
+      {
+        id: 'hist_sample_author_1',
+        manuscriptId: 'ms_sample_author_review',
+        manuscriptAuthorId: 'sandbox_author',
+        actorId: 'sandbox_editor',
+        actorName: 'Clara Holloway (Sample Editor)',
+        action: 'Status changed to under initial review',
+        fromStatus: 'submitted',
+        toStatus: 'under_initial_review',
+        details: 'Assigned to editorial screening.',
+        createdAt: '2026-10-24T14:20:00.000Z',
+      },
+      {
+        id: 'hist_sample_author_2',
+        manuscriptId: 'ms_sample_author_revision',
+        manuscriptAuthorId: 'sandbox_author',
+        actorId: 'sandbox_editor',
+        actorName: 'Clara Holloway (Sample Editor)',
+        action: 'Requested author revision',
+        fromStatus: 'under_initial_review',
+        toStatus: 'author_revision_required',
+        details: 'Minor methodological clarifications requested before copyediting.',
+        createdAt: '2026-10-28T09:45:00.000Z',
+      },
+      {
+        id: 'hist_sample_author_3',
+        manuscriptId: 'ms_sample_author_accepted',
+        manuscriptAuthorId: 'sandbox_author',
+        actorId: 'sandbox_author',
+        actorName: 'Elena Rostova (Sample Author)',
+        action: 'Approved final proof',
+        fromStatus: 'awaiting_proof_approval',
+        toStatus: 'approved_for_publication',
+        details: 'Final formatted proof approved and queued for publication release.',
+        createdAt: '2026-11-04T16:10:00.000Z',
+      },
+    ],
+    reviews: [
+      {
+        id: 'rev_sandbox_editor_ms1',
+        manuscriptId: 'ms_sample_author_review',
+        manuscriptAuthorId: 'sandbox_author',
+        reviewerId: 'sandbox_editor',
+        reviewerName: 'Clara Holloway (Sample Editor)',
+        reviewerAffiliation: 'Editorial Department',
+        recommendation: 'minor_revision',
+        rubricScores: {
+          originality: 5,
+          rigor: 4,
+          clarity: 4,
+          citations: 4,
+        },
+        overallScore: 4.3,
+        summaryFeedback:
+          'Strong archival synthesis of Northern European timber civic structures. Minor structural clarifications around regional zoning timelines will strengthen Chapter 3.',
+        confidentialEditorNote:
+          'Recommend inviting Dr. Adeyemi for comparative structural typology validation.',
+        annotations: [
+          {
+            id: 'ann_seed_1',
+            section: 'title_abstract',
+            locationRef: 'Abstract p. 1',
+            severity: 'commendation',
+            comment: 'Concise framing of the civic timber commons thesis and geographic scope.',
+          },
+          {
+            id: 'ann_seed_2',
+            section: 'methodology',
+            locationRef: 'Section 2.3',
+            severity: 'minor_suggestion',
+            comment: 'Clarify archival sampling criteria for post-1920 municipal guild ledgers.',
+          },
+        ],
+        status: 'submitted',
+        createdAt: '2026-10-25T10:15:00.000Z',
+        updatedAt: '2026-10-25T10:15:00.000Z',
       },
     ],
     services: [...DEFAULT_SERVICES],
@@ -218,7 +438,30 @@ function loadSandboxDb(): SandboxDatabase {
   }
   try {
     const raw = fs.readFileSync(SANDBOX_DB_PATH, 'utf-8');
-    return JSON.parse(raw) as SandboxDatabase;
+    const parsed = JSON.parse(raw) as SandboxDatabase;
+    let migrated = false;
+    const defaults = createInitialSandboxDb();
+
+    if (!Array.isArray(parsed.reviews)) {
+      parsed.reviews = defaults.reviews;
+      migrated = true;
+    }
+    if (!parsed.users.some((u) => u.uid === 'sandbox_reviewer')) {
+      const reviewerUser = defaults.users.find((u) => u.uid === 'sandbox_reviewer');
+      if (reviewerUser) {
+        parsed.users.push(reviewerUser);
+        migrated = true;
+      }
+    }
+    const sampleMs = parsed.manuscripts.find((m) => m.id === 'ms_sample_author_review');
+    if (sampleMs && !Array.isArray(sampleMs.assignedReviewerIds)) {
+      sampleMs.assignedReviewerIds = ['sandbox_reviewer'];
+      migrated = true;
+    }
+    if (migrated) {
+      fs.writeFileSync(SANDBOX_DB_PATH, JSON.stringify(parsed, null, 2), 'utf-8');
+    }
+    return parsed;
   } catch {
     const initial = createInitialSandboxDb();
     fs.writeFileSync(SANDBOX_DB_PATH, JSON.stringify(initial, null, 2), 'utf-8');
@@ -972,7 +1215,7 @@ async function startServer() {
     if (!actor) return;
     const dbState = loadSandboxDb();
     const ms = dbState.manuscripts.find((m) => m.id === req.params.id);
-    if (!ms || !canViewManuscript(actor, ms)) {
+    if (!ms || (!canAccessEditorialWorkspace(actor) && ms.authorId !== actor.uid)) {
       res.status(403).json({ error: 'Forbidden.' });
       return;
     }
@@ -987,7 +1230,7 @@ async function startServer() {
     if (!actor) return;
     const dbState = loadSandboxDb();
     const ms = dbState.manuscripts.find((m) => m.id === req.params.id);
-    if (!ms || !canViewManuscript(actor, ms)) {
+    if (!ms || (!canAccessEditorialWorkspace(actor) && ms.authorId !== actor.uid)) {
       res.status(403).json({ error: 'Forbidden.' });
       return;
     }
@@ -1027,7 +1270,7 @@ async function startServer() {
     if (!actor) return;
     const dbState = loadSandboxDb();
     const ms = dbState.manuscripts.find((m) => m.id === req.params.id);
-    if (!ms || !canViewManuscript(actor, ms)) {
+    if (!ms || (!canAccessEditorialWorkspace(actor) && ms.authorId !== actor.uid)) {
       res.status(403).json({ error: 'Forbidden.' });
       return;
     }
@@ -1128,6 +1371,202 @@ async function startServer() {
     });
     saveSandboxDb(dbState);
     res.json(dbState.manuscripts[idx]);
+  });
+
+  app.get('/api/sandbox/reviewers', (req, res) => {
+    const actor = requireSandboxActor(req, res);
+    if (!actor) return;
+    if (!canManageReviewers(actor)) {
+      res.status(403).json({ error: 'Forbidden: Editorial permissions required.' });
+      return;
+    }
+    const activeUsers = loadSandboxDb().users
+      .filter((u) => u.accountStatus === 'active')
+      .sort((a, b) => {
+        const aRev = a.roles.includes('reviewer') ? 0 : 1;
+        const bRev = b.roles.includes('reviewer') ? 0 : 1;
+        if (aRev !== bRev) return aRev - bRev;
+        return a.displayName.localeCompare(b.displayName);
+      });
+    res.json(activeUsers);
+  });
+
+  app.post('/api/sandbox/manuscripts/:id/assign-reviewers', (req, res) => {
+    const actor = requireSandboxActor(req, res);
+    if (!actor) return;
+    if (!canManageReviewers(actor)) {
+      res.status(403).json({ error: 'Forbidden: Editorial permissions required.' });
+      return;
+    }
+    const dbState = loadSandboxDb();
+    const idx = dbState.manuscripts.findIndex((m) => m.id === req.params.id);
+    if (idx < 0) {
+      res.status(404).json({ error: 'Manuscript not found.' });
+      return;
+    }
+    const ms = dbState.manuscripts[idx];
+    const incomingIds = Array.isArray((req.body as { reviewerIds?: unknown })?.reviewerIds)
+      ? ((req.body as { reviewerIds: unknown[] }).reviewerIds).filter((v): v is string => typeof v === 'string')
+      : [];
+    const cleanIds = Array.from(
+      new Set(incomingIds.map((id) => id.trim()).filter((id) => id.length > 0 && id !== ms.authorId)),
+    ).slice(0, 15);
+    const previous = new Set(ms.assignedReviewerIds || []);
+    const newlyAdded = cleanIds.filter((id) => !previous.has(id));
+    const now = new Date().toISOString();
+
+    dbState.manuscripts[idx] = {
+      ...ms,
+      assignedReviewerIds: cleanIds,
+      updatedAt: now,
+    };
+    dbState.history.unshift({
+      id: createId('hist'),
+      manuscriptId: ms.id,
+      manuscriptAuthorId: ms.authorId,
+      actorId: actor.uid,
+      actorName: actor.displayName,
+      action: 'Peer reviewers updated',
+      details: `Assigned ${cleanIds.length} peer reviewer${cleanIds.length === 1 ? '' : 's'}.`,
+      createdAt: now,
+    });
+    for (const reviewerId of newlyAdded) {
+      dbState.notifications.unshift({
+        id: createId('ntf'),
+        userId: reviewerId,
+        title: `Peer review assignment: ${ms.referenceNumber}`,
+        message: `${actor.displayName} assigned you to peer review "${ms.title}".`,
+        link: `/editorial/manuscripts/${ms.id}`,
+        read: false,
+        createdAt: now,
+      });
+    }
+    dbState.auditLogs.unshift({
+      id: createId('log'),
+      actorId: actor.uid,
+      actorName: actor.displayName,
+      action: 'assign_reviewers',
+      targetType: 'manuscripts',
+      targetId: ms.id,
+      summary: `Updated assigned reviewers (${cleanIds.length}) for ${ms.referenceNumber}`,
+      createdAt: now,
+    });
+    saveSandboxDb(dbState);
+    res.json(dbState.manuscripts[idx]);
+  });
+
+  app.get('/api/sandbox/manuscripts/:id/reviews', (req, res) => {
+    const actor = requireSandboxActor(req, res);
+    if (!actor) return;
+    const dbState = loadSandboxDb();
+    const ms = dbState.manuscripts.find((m) => m.id === req.params.id);
+    if (!ms || !canViewManuscript(actor, ms) || !canAccessPeerReviewWorkspace(actor)) {
+      res.status(403).json({ error: 'Forbidden.' });
+      return;
+    }
+    const visible = filterVisiblePeerReviews(
+      actor,
+      dbState.reviews.filter((r) => r.manuscriptId === ms.id),
+    ).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    res.json(visible);
+  });
+
+  app.post('/api/sandbox/manuscripts/:id/reviews', (req, res) => {
+    const actor = requireSandboxActor(req, res);
+    if (!actor) return;
+    const dbState = loadSandboxDb();
+    const ms = dbState.manuscripts.find((m) => m.id === req.params.id);
+    if (!ms || !canSubmitPeerReview(actor, ms)) {
+      res.status(403).json({ error: 'Forbidden: Only assigned reviewers or editorial staff can submit peer reviews.' });
+      return;
+    }
+
+    const body = req.body as Partial<PeerReview>;
+    const normalizedScores = {
+      originality: clampRubricScore(Number(body.rubricScores?.originality ?? 3)),
+      rigor: clampRubricScore(Number(body.rubricScores?.rigor ?? 3)),
+      clarity: clampRubricScore(Number(body.rubricScores?.clarity ?? 3)),
+      citations: clampRubricScore(Number(body.rubricScores?.citations ?? 3)),
+    };
+    const annotations: PeerReviewAnnotation[] = Array.isArray(body.annotations)
+      ? body.annotations.slice(0, 30).map((ann, idx) => ({
+          id: String(ann.id || `ann_${idx + 1}`).slice(0, 128),
+          section: ann.section,
+          locationRef: String(ann.locationRef || '').trim().slice(0, 120),
+          severity: ann.severity,
+          comment: String(ann.comment || '').trim().slice(0, 1500),
+        }))
+      : [];
+    const status = body.status === 'submitted' ? 'submitted' : 'draft';
+    const summaryFeedback = String(body.summaryFeedback || '').trim().slice(0, 5000);
+    const confidentialEditorNote = String(body.confidentialEditorNote || '').trim().slice(0, 2000);
+
+    const validation = validatePeerReviewInput({
+      rubricScores: normalizedScores,
+      summaryFeedback,
+      annotations,
+      status,
+    });
+    if (!validation.valid) {
+      res.status(400).json({ error: validation.error || 'Invalid peer review submission.' });
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const targetId = (typeof body.id === 'string' && body.id.trim()) || `rev_${actor.uid}_${ms.id}`;
+    const existingIdx = dbState.reviews.findIndex(
+      (r) =>
+        r.manuscriptId === ms.id &&
+        (r.id === targetId || r.reviewerId === actor.uid),
+    );
+    const overallScore = calculateOverallScore(normalizedScores);
+    const saved: PeerReview = {
+      id: existingIdx >= 0 ? dbState.reviews[existingIdx].id : targetId,
+      manuscriptId: ms.id,
+      manuscriptAuthorId: ms.authorId,
+      reviewerId: actor.uid,
+      reviewerName: actor.displayName,
+      reviewerAffiliation: actor.affiliation || '',
+      recommendation: body.recommendation || 'minor_revision',
+      rubricScores: normalizedScores,
+      overallScore,
+      summaryFeedback,
+      confidentialEditorNote,
+      annotations,
+      status,
+      createdAt: existingIdx >= 0 ? dbState.reviews[existingIdx].createdAt : now,
+      updatedAt: now,
+    };
+
+    if (existingIdx >= 0) dbState.reviews[existingIdx] = saved;
+    else dbState.reviews.unshift(saved);
+
+    if (status === 'submitted') {
+      dbState.history.unshift({
+        id: createId('hist'),
+        manuscriptId: ms.id,
+        manuscriptAuthorId: ms.authorId,
+        actorId: actor.uid,
+        actorName: actor.displayName,
+        action: 'Submitted peer review',
+        details: `Rubric score ${overallScore.toFixed(1)}/5 (${saved.recommendation.replace(/_/g, ' ')}) with ${annotations.length} section annotation${annotations.length === 1 ? '' : 's'}.`,
+        createdAt: now,
+      });
+      if (ms.assignedEditorId && ms.assignedEditorId !== actor.uid) {
+        dbState.notifications.unshift({
+          id: createId('ntf'),
+          userId: ms.assignedEditorId,
+          title: `Peer review submitted: ${ms.referenceNumber}`,
+          message: `${actor.displayName} submitted a peer review (${overallScore.toFixed(1)}/5) on "${ms.title}".`,
+          link: `/editorial/manuscripts/${ms.id}`,
+          read: false,
+          createdAt: now,
+        });
+      }
+    }
+
+    saveSandboxDb(dbState);
+    res.json(saved);
   });
 
   app.get('/api/sandbox/quotations', (req, res) => {
@@ -1311,7 +1750,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Publishing Platform server running on http://0.0.0.0:${PORT}`);
+    console.log(`Griots Books server running on http://0.0.0.0:${PORT}`);
   });
 }
 

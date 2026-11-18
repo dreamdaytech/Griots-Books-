@@ -8,10 +8,17 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
+import {
+  buildFirestoreRestHealthUrl,
+  buildFirestoreTransportSettings,
+  classifyFirestoreRestResponse,
+  isOfflineFirestoreError,
+} from '../domain/firebaseDiagnostics';
 
 let app: FirebaseApp | null = null;
 let dbInstance: Firestore | null = null;
 let authInstance: Auth | null = null;
+let connectionTestPromise: Promise<boolean> | null = null;
 
 export function getFirebaseApp(): FirebaseApp {
   if (!app) {
@@ -26,9 +33,7 @@ export function getFirebaseDb(): Firestore {
     try {
       dbInstance = initializeFirestore(
         firebaseApp,
-        {
-          experimentalForceLongPolling: true,
-        },
+        buildFirestoreTransportSettings(),
         firebaseConfig.firestoreDatabaseId,
       );
     } catch {
@@ -100,26 +105,68 @@ export function handleFirestoreError(
   throw new Error(JSON.stringify(errInfo));
 }
 
-export async function testFirestoreConnection(): Promise<boolean> {
-  const attempt = async () => {
-    await getDocFromServer(doc(db, 'test', 'connection'));
-  };
+async function probeFirestoreRestReachability(): Promise<boolean> {
+  if (typeof fetch !== 'function') return false;
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timer = controller ? setTimeout(() => controller.abort(), 5000) : null;
   try {
-    await attempt();
-    return true;
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('the client is offline')) {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+    const url = buildFirestoreRestHealthUrl(
+      firebaseConfig.projectId,
+      firebaseConfig.firestoreDatabaseId,
+      firebaseConfig.apiKey,
+    );
+    const res = await fetch(url, {
+      method: 'GET',
+      signal: controller?.signal,
+    });
+    const bodyText = await res.text();
+    const result = classifyFirestoreRestResponse(res.status, bodyText);
+    return result.configured && result.reachable;
+  } catch {
+    return false;
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+export function testFirestoreConnection(): Promise<boolean> {
+  if (connectionTestPromise) {
+    return connectionTestPromise;
+  }
+
+  connectionTestPromise = (async () => {
+    const attempt = async () => {
+      await getDocFromServer(doc(db, 'test', 'connection'));
+    };
+
+    try {
+      await attempt();
+      return true;
+    } catch (error) {
+      if (!isOfflineFirestoreError(error)) {
+        // Any server-evaluated response (e.g. Missing or insufficient permissions)
+        // confirms live connectivity to the configured Firestore database.
+        return true;
+      }
+
+      const restReachable = await probeFirestoreRestReachability();
+      if (!restReachable) {
+        console.error('Please check your Firebase configuration.');
+        return false;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       try {
         await attempt();
         return true;
       } catch (retryErr) {
-        if (retryErr instanceof Error && retryErr.message.includes('the client is offline')) {
-          console.error('Please check your Firebase configuration.');
-          return false;
+        if (isOfflineFirestoreError(retryErr)) {
+          return true;
         }
+        return true;
       }
     }
-    return true;
-  }
+  })();
+
+  return connectionTestPromise;
 }

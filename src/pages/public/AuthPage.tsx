@@ -308,7 +308,21 @@ export function AuthPage() {
                     Sample Managing Editor — Clara Holloway
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Assess manuscripts, post internal/author notes, change statuses
+                    Assess manuscripts, assign peer reviewers, post notes, change statuses
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => handleSandbox('sandbox_reviewer', '/editorial')}
+                  className="w-full text-left px-4 py-3 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#0F766E] transition-colors"
+                >
+                  <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                    Sample Peer Reviewer — Dr. Samuel Adeyemi
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Evaluate assigned manuscripts with rubric scores &amp; section annotations
                   </p>
                 </button>
 

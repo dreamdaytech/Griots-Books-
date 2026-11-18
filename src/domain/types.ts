@@ -124,6 +124,7 @@ export interface ManuscriptVersion {
   id: string;
   manuscriptId: string;
   manuscriptAuthorId: string;
+  assignedReviewerIds?: string[];
   versionNumber: number;
   fileName: string;
   mimeType: string;
@@ -171,6 +172,64 @@ export interface ManuscriptHistory {
   toStatus?: string;
   details?: string;
   createdAt: string;
+}
+
+export type ManuscriptSectionKey =
+  | 'title_abstract'
+  | 'introduction'
+  | 'literature_review'
+  | 'methodology'
+  | 'results_analysis'
+  | 'discussion_conclusion'
+  | 'references_appendices'
+  | 'overall_structure';
+
+export type AnnotationSeverity =
+  | 'commendation'
+  | 'minor_suggestion'
+  | 'major_issue'
+  | 'required_correction';
+
+export type ReviewRecommendation =
+  | 'accept'
+  | 'minor_revision'
+  | 'major_revision'
+  | 'reject';
+
+export type RubricCriterionKey =
+  | 'originality'
+  | 'rigor'
+  | 'clarity'
+  | 'citations';
+
+export type RubricScores = Record<RubricCriterionKey, number>;
+
+export interface PeerReviewAnnotation {
+  id: string;
+  section: ManuscriptSectionKey;
+  locationRef?: string;
+  severity: AnnotationSeverity;
+  comment: string;
+}
+
+export type PeerReviewStatus = 'draft' | 'submitted';
+
+export interface PeerReview {
+  id: string;
+  manuscriptId: string;
+  manuscriptAuthorId: string;
+  reviewerId: string;
+  reviewerName: string;
+  reviewerAffiliation?: string;
+  recommendation: ReviewRecommendation;
+  rubricScores: RubricScores;
+  overallScore: number;
+  summaryFeedback: string;
+  confidentialEditorNote?: string;
+  annotations: PeerReviewAnnotation[];
+  status: PeerReviewStatus;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type PricingMethod = 'flat_fee' | 'per_word' | 'per_page' | 'custom_quote';

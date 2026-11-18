@@ -7,7 +7,8 @@
 4. **Internal Editorial Note Confidentiality**: Comments with `visibility == 'internal_editorial'` or `visibility == 'confidential_review'` are never readable by the manuscript author.
 5. **State Machine Integrity**: Normal authors can only create manuscripts in `'draft'` or `'submitted'` status and can only withdraw (`'withdrawn'`) or submit (`'submitted'`) their own manuscripts. Editorial transitions (`under_initial_review`, `author_revision_required`, `approved_for_publication`, `published`, `rejected`) require editorial/admin authorization.
 6. **Public Catalogue Protection**: `/publications/{publicationId}` allows public `get` and `list` ONLY when `resource.data.releaseStatus == 'published'`. Approved or archived records remain hidden from public queries.
-7. **Immutable Audit & Version Records**: `/manuscripts/{id}/versions`, `/manuscripts/{id}/history`, and `/auditLogs` cannot be modified or deleted by non-admins once created.
+7. **Immutable Audit & Version Records**: `/manuscripts/{id}/versions`, `/manuscripts/{id}/history`, and `/auditLogs` cannot be modified or deleted by non-admins once created (editorial staff may only sync `assignedReviewerIds` on existing versions).
+8. **Peer Review Confidentiality & Assignment Integrity**: Structured peer reviews (`/manuscripts/{id}/reviews/{reviewId}`) may only be read by editorial staff or the authoring reviewer (`reviewerId == request.auth.uid`), never by the manuscript author or unassigned users. Submitting a review requires editorial staff privileges or membership in the parent manuscript's `assignedReviewerIds` (excluding the manuscript's author).
 
 ## 2. The "Dirty Dozen" Attack Payloads
 1. **Privilege Escalation on Registration**: Creating `/users/attacker1` with `roles: ['super_admin']` -> MUST FAIL (`PERMISSION_DENIED`).
@@ -22,3 +23,6 @@
 10. **Author Creating/Mutating Service Pricing**: Normal author writing to `/services/srv_1` -> MUST FAIL (`PERMISSION_DENIED`).
 11. **Tampering with Audit Logs**: Normal user updating or deleting `/auditLogs/log_1` -> MUST FAIL (`PERMISSION_DENIED`).
 12. **Cross-User Notification Read/Write**: Author A reading or creating `/notifications/notif_of_author_b` -> MUST FAIL (`PERMISSION_DENIED`).
+13. **Unassigned Reviewer Submission / Self-Review**: Author A or an unassigned user creating `/manuscripts/ms_of_author_a/reviews/rev_1` -> MUST FAIL (`PERMISSION_DENIED`).
+14. **Cross-Reviewer Report Snooping**: Reviewer A reading Reviewer B's `/manuscripts/ms_1/reviews/rev_reviewer_b` -> MUST FAIL (`PERMISSION_DENIED`).
+

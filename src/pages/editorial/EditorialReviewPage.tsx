@@ -2,11 +2,18 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Download, Lock, Upload } from 'lucide-react';
 import { ConfirmDialog } from '../../components/ConfirmDialog';
+import { PeerReviewModule } from '../../components/PeerReviewModule';
 import { PortalLayout } from '../../components/PortalLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useAuth } from '../../context/AuthContext';
 import { usePlatform } from '../../context/PlatformContext';
-import { canAccessEditorialWorkspace } from '../../domain/rbac';
+import { RUBRIC_SCALE_LABELS } from '../../domain/peerReview';
+import {
+  canAccessEditorialWorkspace,
+  canAccessPeerReviewWorkspace,
+  canManageReviewers,
+  canSubmitPeerReview,
+} from '../../domain/rbac';
 import type {
   CommentType,
   CommentVisibility,
@@ -15,6 +22,8 @@ import type {
   ManuscriptHistory,
   ManuscriptStatus,
   ManuscriptVersion,
+  PeerReview,
+  UserProfile,
 } from '../../domain/types';
 import {
   getAllowedTransitions,
@@ -28,12 +37,16 @@ export function EditorialReviewPage() {
   const { user, repo, getIdToken, downloadPrivateFile } = useAuth();
   const { notify } = usePlatform();
 
-  const authorized = canAccessEditorialWorkspace(user);
+  const authorized = canAccessPeerReviewWorkspace(user);
+  const isEditorialStaff = canAccessEditorialWorkspace(user);
+  const canManage = canManageReviewers(user);
 
   const [manuscript, setManuscript] = useState<Manuscript | null>(null);
   const [versions, setVersions] = useState<ManuscriptVersion[]>([]);
   const [comments, setComments] = useState<EditorialComment[]>([]);
   const [history, setHistory] = useState<ManuscriptHistory[]>([]);
+  const [peerReviews, setPeerReviews] = useState<PeerReview[]>([]);
+  const [assignableReviewers, setAssignableReviewers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Editorial actions
@@ -59,23 +72,29 @@ export function EditorialReviewPage() {
       const ms = await repo.getManuscriptById(id, user);
       setManuscript(ms);
       if (ms) {
-        const [v, c, h] = await Promise.all([
+        const [v, r, c, h, reviewers] = await Promise.all([
           repo.listManuscriptVersions(id, user),
-          repo.listManuscriptComments(id, user),
-          repo.listManuscriptHistory(id, user),
+          repo.listPeerReviews(id, user),
+          isEditorialStaff ? repo.listManuscriptComments(id, user) : Promise.resolve([]),
+          isEditorialStaff ? repo.listManuscriptHistory(id, user) : Promise.resolve([]),
+          canManage ? repo.listAssignableReviewers(user) : Promise.resolve([]),
         ]);
         setVersions(v);
+        setPeerReviews(r);
         setComments(c);
         setHistory(h);
-        const allowed = getAllowedTransitions(ms.status, ms.publicationType, user, ms.authorId);
-        setNextStatus(allowed[0] || '');
+        setAssignableReviewers(reviewers);
+        if (isEditorialStaff) {
+          const allowed = getAllowedTransitions(ms.status, ms.publicationType, user, ms.authorId);
+          setNextStatus(allowed[0] || '');
+        }
       }
     } catch (err) {
       notify(err instanceof Error ? err.message : 'Unable to load manuscript.', 'error');
     } finally {
       setLoading(false);
     }
-  }, [authorized, id, notify, repo, user]);
+  }, [authorized, canManage, id, isEditorialStaff, notify, repo, user]);
 
   useEffect(() => {
     void loadWorkspace();
@@ -86,7 +105,7 @@ export function EditorialReviewPage() {
       <PortalLayout title="Access Denied" breadcrumb="Editorial Desk">
         <div className="rounded-xl border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 p-8 text-center">
           <p className="text-sm text-red-700 dark:text-red-300">
-            Editorial staff role required to review submissions.
+            Editorial staff or assigned peer reviewer permissions required to review submissions.
           </p>
         </div>
       </PortalLayout>
@@ -95,7 +114,7 @@ export function EditorialReviewPage() {
 
   if (loading) {
     return (
-      <PortalLayout title="Loading Review..." breadcrumb="Editorial Desk">
+      <PortalLayout title="Loading Review..." breadcrumb={isEditorialStaff ? 'Editorial Desk' : 'Peer Review Desk'}>
         <div className="h-64 rounded-xl bg-stone-200 dark:bg-slate-800 animate-pulse" />
       </PortalLayout>
     );
@@ -103,9 +122,9 @@ export function EditorialReviewPage() {
 
   if (!manuscript || !user) {
     return (
-      <PortalLayout title="Manuscript Not Found" breadcrumb="Editorial Desk">
+      <PortalLayout title="Manuscript Not Found" breadcrumb={isEditorialStaff ? 'Editorial Desk' : 'Peer Review Desk'}>
         <Link to="/editorial" className="text-sm text-[#0F766E] underline">
-          Back to Editorial Queue
+          Back to Review Queue
         </Link>
       </PortalLayout>
     );
@@ -215,14 +234,48 @@ export function EditorialReviewPage() {
     }
   };
 
+  const handleAssignReviewers = async (reviewerIds: string[]) => {
+    setBusy(true);
+    try {
+      const updated = await repo.assignReviewers(manuscript, reviewerIds, user);
+      setManuscript(updated);
+      notify('Assigned peer reviewers updated.', 'success');
+      await loadWorkspace();
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'Could not update peer reviewers.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSavePeerReview = async (
+    payload: Omit<PeerReview, 'id' | 'createdAt' | 'updatedAt'> & { id?: string },
+  ) => {
+    setBusy(true);
+    try {
+      await repo.savePeerReview(manuscript, payload, user);
+      notify(
+        payload.status === 'submitted'
+          ? 'Peer review submitted and recorded.'
+          : 'Peer review draft saved.',
+        'success',
+      );
+      await loadWorkspace();
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'Could not save peer review.', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <PortalLayout
       title={manuscript.title}
-      breadcrumb={`Editorial Desk / ${manuscript.referenceNumber}`}
+      breadcrumb={`${isEditorialStaff ? 'Editorial Desk' : 'Peer Review Desk'} / ${manuscript.referenceNumber}`}
       actions={
         <div className="flex items-center gap-3">
           <StatusBadge status={manuscript.status} />
-          {manuscript.assignedEditorId !== user.uid && (
+          {isEditorialStaff && manuscript.assignedEditorId !== user.uid && (
             <button
               type="button"
               disabled={busy}
@@ -295,218 +348,272 @@ export function EditorialReviewPage() {
           <section className="rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
             <h2 className="font-serif text-lg font-semibold">Manuscript Files & Editorial Uploads</h2>
             <div className="mt-3 divide-y divide-stone-200 dark:divide-slate-800">
-              {versions.map((ver) => (
-                <div key={ver.id} className="py-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium">
-                      <span className="font-mono text-xs text-[#0F766E] mr-2">v{ver.versionNumber}</span>
-                      {ver.fileName}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {ver.uploadedByName} · {new Date(ver.createdAt).toLocaleString()}
-                      {ver.notes ? ` · ${ver.notes}` : ''}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      downloadPrivateFile(manuscript.id, ver.storageKey, ver.fileName).catch((err) =>
-                        notify(err instanceof Error ? err.message : 'Download error', 'error'),
-                      )
-                    }
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-stone-300 dark:border-slate-700"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            <form onSubmit={handleUploadEdited} className="mt-4 pt-4 border-t border-stone-200 dark:border-slate-800 flex flex-col sm:flex-row gap-3 items-end">
-              <div className="flex-1">
-                <label htmlFor="ed-upload" className="block text-xs font-semibold mb-1">
-                  Upload Edited / Typeset Version
-                </label>
-                <input
-                  id="ed-upload"
-                  type="file"
-                  accept=".pdf,.docx,.doc,.txt,.md"
-                  onChange={(e) => setEditedFile(e.target.files?.[0] || null)}
-                  className="w-full text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-stone-300 file:bg-stone-100 file:text-slate-800 dark:file:border-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200"
-                />
-              </div>
-              <input
-                value={editedNotes}
-                onChange={(e) => setEditedNotes(e.target.value)}
-                aria-label="Edited file notes"
-                className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950"
-              />
-              <button
-                type="submit"
-                disabled={!editedFile || busy}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E] disabled:opacity-40 shrink-0"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Upload</span>
-              </button>
-            </form>
-          </section>
-
-          {/* Editorial Assessment & Confidential Notes */}
-          <section className="rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
-            <h2 className="font-serif text-lg font-semibold">
-              Assessments, Author Feedback & Internal Notes
-            </h2>
-            <form onSubmit={handlePostComment} className="mt-4 space-y-3 p-4 rounded-xl border border-stone-200 dark:border-slate-800 bg-stone-50/70 dark:bg-slate-950">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="cmt-vis" className="block text-xs font-semibold mb-1">
-                    Visibility Scope
-                  </label>
-                  <select
-                    id="cmt-vis"
-                    value={visibility}
-                    onChange={(e) => setVisibility(e.target.value as CommentVisibility)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                  >
-                    <option value="author_visible">Visible to Author & Editorial Team</option>
-                    <option value="internal_editorial">Confidential Internal Note (Staff Only)</option>
-                    <option value="confidential_review">Confidential Peer-Review (Staff Only)</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="cmt-type" className="block text-xs font-semibold mb-1">
-                    Note Type
-                  </label>
-                  <select
-                    id="cmt-type"
-                    value={commentType}
-                    onChange={(e) => setCommentType(e.target.value as CommentType)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-                  >
-                    <option value="assessment">Editorial Assessment</option>
-                    <option value="revision_request">Revision Request</option>
-                    <option value="editorial_note">Internal Editorial Note</option>
-                    <option value="proof_feedback">Proofing Feedback</option>
-                  </select>
-                </div>
-              </div>
-              <textarea
-                rows={3}
-                value={commentBody}
-                onChange={(e) => setCommentBody(e.target.value)}
-                placeholder="Write assessment, revision instructions, or confidential editorial note..."
-                className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900"
-              />
-              <button
-                type="submit"
-                disabled={!commentBody.trim() || busy}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E] disabled:opacity-40"
-              >
-                Record Note
-              </button>
-            </form>
-
-            <div className="mt-5 space-y-3">
-              {comments.map((c) => {
-                const isInternal = c.visibility !== 'author_visible';
-                return (
-                  <div
-                    key={c.id}
-                    className={`p-4 rounded-lg border ${
-                      isInternal
-                        ? 'border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30'
-                        : 'border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-950'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2 text-xs">
-                      <span className="font-semibold flex items-center gap-1.5">
-                        {isInternal && <Lock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-300" />}
-                        {c.authorName} · {c.commentType.replace(/_/g, ' ')}
-                        {isInternal ? ' (Confidential — Hidden from Author)' : ' (Author-Visible)'}
-                      </span>
-                      <span className="text-slate-500 tabular-nums">
-                        {new Date(c.createdAt).toLocaleString()}
-                      </span>
+              {versions.length === 0 ? (
+                <p className="py-3 text-xs text-slate-500 dark:text-slate-400">
+                  No uploaded document versions attached yet.
+                </p>
+              ) : (
+                versions.map((ver) => (
+                  <div key={ver.id} className="py-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-medium">
+                        <span className="font-mono text-xs text-[#0F766E] mr-2">v{ver.versionNumber}</span>
+                        {ver.fileName}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {ver.uploadedByName} · {new Date(ver.createdAt).toLocaleString()}
+                        {ver.notes ? ` · ${ver.notes}` : ''}
+                      </p>
                     </div>
-                    <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{c.body}</p>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        downloadPrivateFile(manuscript.id, ver.storageKey, ver.fileName).catch((err) =>
+                          notify(err instanceof Error ? err.message : 'Download error', 'error'),
+                        )
+                      }
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-stone-300 dark:border-slate-700"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Download</span>
+                    </button>
                   </div>
-                );
-              })}
+                ))
+              )}
             </div>
-          </section>
-        </div>
 
-        {/* Right Column: Workflow Transition & History */}
-        <div className="lg:col-span-4 space-y-6">
-          <section className="rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Workflow Status Transition
-            </h2>
-            {allowedTransitions.length === 0 ? (
-              <p className="mt-2 text-xs text-slate-500">
-                No further transitions are available from "{STATUS_LABELS[manuscript.status]}" for your role.
-              </p>
-            ) : (
-              <form onSubmit={handleStatusSubmit} className="mt-3 space-y-3">
-                <div>
-                  <label htmlFor="wf-next" className="block text-xs font-medium mb-1">
-                    Next Permitted Stage
+            {isEditorialStaff && (
+              <form onSubmit={handleUploadEdited} className="mt-4 pt-4 border-t border-stone-200 dark:border-slate-800 flex flex-col sm:flex-row gap-3 items-end">
+                <div className="flex-1">
+                  <label htmlFor="ed-upload" className="block text-xs font-semibold mb-1">
+                    Upload Edited / Typeset Version
                   </label>
-                  <select
-                    id="wf-next"
-                    value={nextStatus}
-                    onChange={(e) => setNextStatus(e.target.value as ManuscriptStatus)}
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950"
-                  >
-                    {allowedTransitions.map((st) => (
-                      <option key={st} value={st}>
-                        {STATUS_LABELS[st]}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="wf-note" className="block text-xs font-medium mb-1">
-                    Decision / Transition Note
-                  </label>
-                  <textarea
-                    id="wf-note"
-                    rows={2}
-                    value={transitionNote}
-                    onChange={(e) => setTransitionNote(e.target.value)}
-                    placeholder="Reason for status change (notifies author)..."
-                    className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950"
+                  <input
+                    id="ed-upload"
+                    type="file"
+                    accept=".pdf,.docx,.doc,.txt,.md"
+                    onChange={(e) => setEditedFile(e.target.files?.[0] || null)}
+                    className="w-full text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border file:border-stone-300 file:bg-stone-100 file:text-slate-800 dark:file:border-slate-700 dark:file:bg-slate-800 dark:file:text-slate-200"
                   />
                 </div>
+                <input
+                  value={editedNotes}
+                  onChange={(e) => setEditedNotes(e.target.value)}
+                  aria-label="Edited file notes"
+                  className="flex-1 px-3 py-1.5 text-xs rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950"
+                />
                 <button
                   type="submit"
-                  disabled={busy || !nextStatus}
-                  className="w-full py-2 text-xs font-semibold rounded-lg bg-[#0F766E] text-white hover:bg-[#115E59] disabled:opacity-40"
+                  disabled={!editedFile || busy}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E] disabled:opacity-40 shrink-0"
                 >
-                  Apply Status Transition
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>Upload</span>
                 </button>
               </form>
             )}
           </section>
 
-          <section className="rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Audit History
-            </h2>
-            <ol className="mt-4 space-y-3 border-l border-stone-200 dark:border-slate-700 pl-4">
-              {history.map((h) => (
-                <li key={h.id} className="text-xs">
-                  <p className="font-semibold">{h.action}</p>
-                  <p className="text-slate-600 dark:text-slate-300">{h.details}</p>
-                  <p className="text-slate-400 tabular-nums">
-                    {h.actorName} · {new Date(h.createdAt).toLocaleString()}
+          {/* Structured Peer Review & Rubric Annotations */}
+          <PeerReviewModule
+            manuscript={manuscript}
+            currentUser={user}
+            reviews={peerReviews}
+            assignableReviewers={assignableReviewers}
+            canManageReviewers={canManage}
+            canSubmitReview={canSubmitPeerReview(user, manuscript)}
+            busy={busy}
+            onAssignReviewers={handleAssignReviewers}
+            onSaveReview={handleSavePeerReview}
+            onValidationError={(msg) => notify(msg, 'error')}
+          />
+
+          {/* Editorial Assessment & Confidential Notes (Editorial Staff Only) */}
+          {isEditorialStaff && (
+            <section className="rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
+              <h2 className="font-serif text-lg font-semibold">
+                Assessments, Author Feedback & Internal Notes
+              </h2>
+              <form onSubmit={handlePostComment} className="mt-4 space-y-3 p-4 rounded-xl border border-stone-200 dark:border-slate-800 bg-stone-50/70 dark:bg-slate-950">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label htmlFor="cmt-vis" className="block text-xs font-semibold mb-1">
+                      Visibility Scope
+                    </label>
+                    <select
+                      id="cmt-vis"
+                      value={visibility}
+                      onChange={(e) => setVisibility(e.target.value as CommentVisibility)}
+                      className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    >
+                      <option value="author_visible">Visible to Author & Editorial Team</option>
+                      <option value="internal_editorial">Confidential Internal Note (Staff Only)</option>
+                      <option value="confidential_review">Confidential Peer-Review (Staff Only)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="cmt-type" className="block text-xs font-semibold mb-1">
+                      Note Type
+                    </label>
+                    <select
+                      id="cmt-type"
+                      value={commentType}
+                      onChange={(e) => setCommentType(e.target.value as CommentType)}
+                      className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                    >
+                      <option value="assessment">Editorial Assessment</option>
+                      <option value="revision_request">Revision Request</option>
+                      <option value="editorial_note">Internal Editorial Note</option>
+                      <option value="proof_feedback">Proofing Feedback</option>
+                    </select>
+                  </div>
+                </div>
+                <textarea
+                  rows={3}
+                  value={commentBody}
+                  onChange={(e) => setCommentBody(e.target.value)}
+                  placeholder="Write assessment, revision instructions, or confidential editorial note..."
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900"
+                />
+                <button
+                  type="submit"
+                  disabled={!commentBody.trim() || busy}
+                  className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E] disabled:opacity-40"
+                >
+                  Record Note
+                </button>
+              </form>
+
+              <div className="mt-5 space-y-3">
+                {comments.map((c) => {
+                  const isInternal = c.visibility !== 'author_visible';
+                  return (
+                    <div
+                      key={c.id}
+                      className={`p-4 rounded-lg border ${
+                        isInternal
+                          ? 'border-amber-300 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/30'
+                          : 'border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-950'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 text-xs">
+                        <span className="font-semibold flex items-center gap-1.5">
+                          {isInternal && <Lock className="w-3.5 h-3.5 text-amber-700 dark:text-amber-300" />}
+                          {c.authorName} · {c.commentType.replace(/_/g, ' ')}
+                          {isInternal ? ' (Confidential — Hidden from Author)' : ' (Author-Visible)'}
+                        </span>
+                        <span className="text-slate-500 tabular-nums">
+                          {new Date(c.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">{c.body}</p>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+        </div>
+
+        {/* Right Column: Workflow Transition & History (Staff) or Rubric Guide (Reviewer) */}
+        <div className="lg:col-span-4 space-y-6">
+          {isEditorialStaff ? (
+            <>
+              <section className="rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Workflow Status Transition
+                </h2>
+                {allowedTransitions.length === 0 ? (
+                  <p className="mt-2 text-xs text-slate-500">
+                    No further transitions are available from "{STATUS_LABELS[manuscript.status]}" for your role.
                   </p>
-                </li>
-              ))}
-            </ol>
-          </section>
+                ) : (
+                  <form onSubmit={handleStatusSubmit} className="mt-3 space-y-3">
+                    <div>
+                      <label htmlFor="wf-next" className="block text-xs font-medium mb-1">
+                        Next Permitted Stage
+                      </label>
+                      <select
+                        id="wf-next"
+                        value={nextStatus}
+                        onChange={(e) => setNextStatus(e.target.value as ManuscriptStatus)}
+                        className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950"
+                      >
+                        {allowedTransitions.map((st) => (
+                          <option key={st} value={st}>
+                            {STATUS_LABELS[st]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="wf-note" className="block text-xs font-medium mb-1">
+                        Decision / Transition Note
+                      </label>
+                      <textarea
+                        id="wf-note"
+                        rows={2}
+                        value={transitionNote}
+                        onChange={(e) => setTransitionNote(e.target.value)}
+                        placeholder="Reason for status change (notifies author)..."
+                        className="w-full px-3 py-2 text-xs rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950"
+                      />
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={busy || !nextStatus}
+                      className="w-full py-2 text-xs font-semibold rounded-lg bg-[#0F766E] text-white hover:bg-[#115E59] disabled:opacity-40"
+                    >
+                      Apply Status Transition
+                    </button>
+                  </form>
+                )}
+              </section>
+
+              <section className="rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Audit History
+                </h2>
+                <ol className="mt-4 space-y-3 border-l border-stone-200 dark:border-slate-700 pl-4">
+                  {history.map((h) => (
+                    <li key={h.id} className="text-xs">
+                      <p className="font-semibold">{h.action}</p>
+                      <p className="text-slate-600 dark:text-slate-300">{h.details}</p>
+                      <p className="text-slate-400 tabular-nums">
+                        {h.actorName} · {new Date(h.createdAt).toLocaleString()}
+                      </p>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            </>
+          ) : (
+            <section className="rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Peer Reviewer Guidelines
+              </h2>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Your evaluation and section annotations inform the handling editor&apos;s decision. Internal editorial notes and fellow reviewers&apos; reports remain confidential.
+              </p>
+              <div className="pt-3 border-t border-stone-200 dark:border-slate-800 space-y-2">
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  Rubric Scoring Scale (1–5)
+                </p>
+                <dl className="space-y-1.5 text-xs">
+                  {([5, 4, 3, 2, 1] as const).map((score) => (
+                    <div key={score} className="flex items-center justify-between gap-2">
+                      <dt className="font-mono font-semibold text-[#0F766E] dark:text-teal-300">
+                        {score} / 5
+                      </dt>
+                      <dd className="text-slate-600 dark:text-slate-300">
+                        {RUBRIC_SCALE_LABELS[score]}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </section>
+          )}
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import { DataTable, type TableColumn } from '../../components/DataTable';
 import { PortalLayout } from '../../components/PortalLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useAuth } from '../../context/AuthContext';
-import { canAccessEditorialWorkspace } from '../../domain/rbac';
+import { canAccessEditorialWorkspace, canAccessPeerReviewWorkspace } from '../../domain/rbac';
 import type { Manuscript } from '../../domain/types';
 import { PUBLICATION_TYPE_LABELS } from '../../domain/workflow';
 
@@ -14,7 +14,8 @@ export function EditorialWorkspacePage() {
   const [manuscripts, setManuscripts] = useState<Manuscript[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const authorized = canAccessEditorialWorkspace(user);
+  const authorized = canAccessPeerReviewWorkspace(user);
+  const isEditorialStaff = canAccessEditorialWorkspace(user);
 
   useEffect(() => {
     if (!user || !authorized) {
@@ -24,10 +25,19 @@ export function EditorialWorkspacePage() {
     setLoading(true);
     repo
       .listManuscriptsForActor(user)
+      .then((list) =>
+        isEditorialStaff
+          ? list
+          : list.filter(
+              (m) =>
+                Array.isArray(m.assignedReviewerIds) &&
+                m.assignedReviewerIds.includes(user.uid),
+            ),
+      )
       .then(setManuscripts)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [authorized, repo, user]);
+  }, [authorized, isEditorialStaff, repo, user]);
 
   if (!authorized) {
     return (
@@ -35,8 +45,8 @@ export function EditorialWorkspacePage() {
         <div className="rounded-xl border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 p-8 text-center">
           <h2 className="font-serif text-xl font-semibold">Editorial Authorization Required</h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-            This workspace is restricted to authorized Editors, Managing Editors, Proofreaders,
-            Designers, and Platform Administrators.
+            This workspace is restricted to authorized Editors, Managing Editors, Peer Reviewers,
+            Proofreaders, Designers, and Platform Administrators.
           </p>
         </div>
       </PortalLayout>
@@ -98,7 +108,10 @@ export function EditorialWorkspacePage() {
   ];
 
   return (
-    <PortalLayout title="Editorial Queue" breadcrumb="Editorial Desk">
+    <PortalLayout
+      title={isEditorialStaff ? 'Editorial Queue' : 'Assigned Peer Reviews'}
+      breadcrumb={isEditorialStaff ? 'Editorial Desk' : 'Peer Review Desk'}
+    >
       <DataTable
         data={manuscripts}
         columns={columns}

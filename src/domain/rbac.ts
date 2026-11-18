@@ -56,6 +56,31 @@ export function canAccessEditorialWorkspace(user: UserProfile | null | undefined
   return hasAnyRole(user, EDITORIAL_ROLES);
 }
 
+export function canAccessPeerReviewWorkspace(user: UserProfile | null | undefined): boolean {
+  return canAccessEditorialWorkspace(user) || hasAnyRole(user, ['reviewer']);
+}
+
+export function canManageReviewers(user: UserProfile | null | undefined): boolean {
+  return canAccessEditorialWorkspace(user);
+}
+
+export function canSubmitPeerReview(
+  user: UserProfile | null | undefined,
+  manuscript: Pick<Manuscript, 'authorId' | 'assignedReviewerIds'>,
+): boolean {
+  if (!user || user.accountStatus === 'suspended') return false;
+  if (user.uid === manuscript.authorId && !canAccessEditorialWorkspace(user)) return false;
+  if (canAccessEditorialWorkspace(user)) return true;
+  if (
+    hasAnyRole(user, ['reviewer']) &&
+    Array.isArray(manuscript.assignedReviewerIds) &&
+    manuscript.assignedReviewerIds.includes(user.uid)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function canAccessAdminConsole(user: UserProfile | null | undefined): boolean {
   return hasAnyRole(user, ADMIN_ROLES);
 }
@@ -86,6 +111,7 @@ export function canViewManuscript(
 export function canViewComment(user: UserProfile | null | undefined, comment: EditorialComment): boolean {
   if (!user) return false;
   if (canAccessEditorialWorkspace(user)) return true;
+  if (comment.authorId === user.uid) return true;
   if (comment.manuscriptAuthorId === user.uid) {
     return comment.visibility === 'author_visible';
   }

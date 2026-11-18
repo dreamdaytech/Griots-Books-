@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FilePlus2 } from 'lucide-react';
 import { DataTable, type TableColumn } from '../../components/DataTable';
+import { EditorialProgressBar } from '../../components/EditorialProgressBar';
 import { PortalLayout } from '../../components/PortalLayout';
-import { StatusBadge } from '../../components/StatusBadge';
 import { useAuth } from '../../context/AuthContext';
 import type { Manuscript, NotificationItem } from '../../domain/types';
-import { PUBLICATION_TYPE_LABELS } from '../../domain/workflow';
+import { getEditorialProgress, PUBLICATION_TYPE_LABELS } from '../../domain/workflow';
 
 export function AuthorDashboardPage({ manuscriptsOnly = false }: { manuscriptsOnly?: boolean }) {
   const { user, repo } = useAuth();
@@ -81,10 +81,10 @@ export function AuthorDashboardPage({ manuscriptsOnly = false }: { manuscriptsOn
       ),
     },
     {
-      key: 'status',
-      label: 'Status',
-      sortValue: (m) => m.status,
-      render: (m) => <StatusBadge status={m.status} />,
+      key: 'progress',
+      label: 'Editorial Workflow',
+      sortValue: (m) => getEditorialProgress(m.status).percent,
+      render: (m) => <EditorialProgressBar status={m.status} />,
     },
     {
       key: 'updated',
@@ -194,13 +194,20 @@ export function AuthorDashboardPage({ manuscriptsOnly = false }: { manuscriptsOn
           filterOptions={[
             { label: 'All', value: 'all' },
             { label: 'Drafts', value: 'draft' },
-            { label: 'Submitted / Review', value: 'review' },
+            { label: 'In Review', value: 'review' },
             { label: 'Revision Required', value: 'author_revision_required' },
+            { label: 'Accepted', value: 'approved_for_publication' },
             { label: 'Published', value: 'published' },
           ]}
           filterMatcher={(m, val) => {
             if (val === 'review') {
-              return ['submitted', 'under_initial_review', 'assessment_completed', 'editing_in_progress'].includes(m.status);
+              return [
+                'submitted',
+                'under_initial_review',
+                'assessment_completed',
+                'editing_in_progress',
+                'formatting_in_progress',
+              ].includes(m.status);
             }
             return m.status === val;
           }}

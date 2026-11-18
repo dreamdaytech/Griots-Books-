@@ -6,6 +6,7 @@ import type {
   ManuscriptHistory,
   ManuscriptVersion,
   NotificationItem,
+  PeerReview,
   PlatformSettings,
   PublicAuthorProfile,
   PublicationRecord,
@@ -244,6 +245,42 @@ export class SandboxRepository implements IPublishingRepository {
     return this.request<Manuscript>(
       `/api/sandbox/manuscripts/${encodeURIComponent(manuscript.id)}/assign-editor`,
       { method: 'POST', body: JSON.stringify({ editorId, editorName }) },
+      actor.uid,
+    );
+  }
+
+  async listAssignableReviewers(actor: UserProfile): Promise<UserProfile[]> {
+    return this.request<UserProfile[]>('/api/sandbox/reviewers', {}, actor.uid);
+  }
+
+  async assignReviewers(
+    manuscript: Manuscript,
+    reviewerIds: string[],
+    actor: UserProfile,
+  ): Promise<Manuscript> {
+    return this.request<Manuscript>(
+      `/api/sandbox/manuscripts/${encodeURIComponent(manuscript.id)}/assign-reviewers`,
+      { method: 'POST', body: JSON.stringify({ reviewerIds }) },
+      actor.uid,
+    );
+  }
+
+  async listPeerReviews(manuscriptId: string, actor: UserProfile): Promise<PeerReview[]> {
+    return this.request<PeerReview[]>(
+      `/api/sandbox/manuscripts/${encodeURIComponent(manuscriptId)}/reviews`,
+      {},
+      actor.uid,
+    );
+  }
+
+  async savePeerReview(
+    manuscript: Manuscript,
+    review: Omit<PeerReview, 'id' | 'createdAt' | 'updatedAt'> & { id?: string },
+    actor: UserProfile,
+  ): Promise<PeerReview> {
+    return this.request<PeerReview>(
+      `/api/sandbox/manuscripts/${encodeURIComponent(manuscript.id)}/reviews`,
+      { method: 'POST', body: JSON.stringify(review) },
       actor.uid,
     );
   }
