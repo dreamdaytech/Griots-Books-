@@ -19,6 +19,6 @@ jobs:
       - name: TypeScript validation
         run: bun run lint
       - name: Publishing workflow tests
-        run: bun test src/domain/workflow.test.ts src/domain/peerReview.test.ts src/domain/firebaseDiagnostics.test.ts
+        run: bun test src/domain/workflow.test.ts src/domain/peerReview.test.ts src/domain/firebaseDiagnostics.test.ts src/domain/publications.test.ts
       - name: Production frontend build
         run: bun run build

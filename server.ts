@@ -458,6 +458,15 @@ function loadSandboxDb(): SandboxDatabase {
       sampleMs.assignedReviewerIds = ['sandbox_reviewer'];
       migrated = true;
     }
+    // Historical demo authors are intentionally public synthetic profiles.
+    // Real/sandbox user profiles remain private until explicit author opt-in.
+    const seedProfileIds = new Set(SAMPLE_PUBLIC_AUTHORS.map((profile) => profile.uid));
+    for (const profile of parsed.publicProfiles) {
+      if (profile.isSample && seedProfileIds.has(profile.uid) && profile.isPublic !== true) {
+        profile.isPublic = true;
+        migrated = true;
+      }
+    }
     if (migrated) {
       fs.writeFileSync(SANDBOX_DB_PATH, JSON.stringify(parsed, null, 2), 'utf-8');
     }
@@ -732,12 +741,23 @@ async function startServer() {
       accessType: input.accessType ?? existing?.accessType ?? 'free',
       price: Number(input.price ?? existing?.price ?? 0),
       currency: input.currency ?? existing?.currency ?? 'USD',
-      isbn: input.isbn ?? existing?.isbn ?? '',
-      issn: input.issn ?? existing?.issn ?? '',
-      doi: input.doi ?? existing?.doi ?? '',
+      isbn: (input.isbn ?? existing?.isbn ?? '').slice(0, 40),
+      isbnPrint: (input.isbnPrint ?? existing?.isbnPrint ?? '').slice(0, 40),
+      isbnDigital: (input.isbnDigital ?? existing?.isbnDigital ?? '').slice(0, 40),
+      issn: (input.issn ?? existing?.issn ?? '').slice(0, 40),
+      doi: (input.doi ?? existing?.doi ?? '').slice(0, 120),
       identifierStatus: input.identifierStatus ?? existing?.identifierStatus ?? 'unassigned',
-      coverUrl: input.coverUrl ?? existing?.coverUrl ?? ASSET_FALLBACK_COVER,
-      excerpt: input.excerpt ?? existing?.excerpt ?? '',
+      coverUrl: (input.coverUrl ?? existing?.coverUrl ?? ASSET_FALLBACK_COVER).slice(0, 500),
+      language: (input.language ?? existing?.language ?? '').slice(0, 60),
+      edition: (input.edition ?? existing?.edition ?? '').slice(0, 100),
+      imprint: (input.imprint ?? existing?.imprint ?? '').slice(0, 140),
+      series: (input.series ?? existing?.series ?? '').slice(0, 140),
+      pageCount: Number.isInteger(input.pageCount) && Number(input.pageCount) >= 1 && Number(input.pageCount) <= 50000 ? input.pageCount : undefined,
+      publicationYear: Number.isInteger(input.publicationYear) && Number(input.publicationYear) >= 1400 && Number(input.publicationYear) <= 2100 ? input.publicationYear : undefined,
+      subjects: (input.subjects ?? existing?.subjects ?? []).filter((x): x is string => typeof x === 'string').slice(0, 25).map((x) => x.trim().slice(0, 120)).filter(Boolean),
+      tableOfContents: (input.tableOfContents ?? existing?.tableOfContents ?? []).filter((x): x is string => typeof x === 'string').slice(0, 80).map((x) => x.trim().slice(0, 200)).filter(Boolean),
+      previewEnabled: input.previewEnabled === true,
+      excerpt: input.previewEnabled === true ? (input.excerpt ?? '').trim().slice(0, 12000) : '',
       releaseStatus,
       isSample: input.isSample ?? existing?.isSample ?? false,
       publishedAt: releaseStatus === 'published' ? existing?.publishedAt || now : existing?.publishedAt,
@@ -857,7 +877,7 @@ async function startServer() {
   });
 
   app.get('/api/sandbox/authors/public', (_req, res) => {
-    res.json(loadSandboxDb().publicProfiles);
+    res.json(loadSandboxDb().publicProfiles.filter((profile) => profile.isPublic === true));
   });
 
   app.get('/api/sandbox/users', (req, res) => {
@@ -904,6 +924,7 @@ async function startServer() {
         displayName: incoming.displayName || 'Registered Author',
         roles: ['author'],
         accountStatus: 'active',
+        publicProfileEnabled: false,
         affiliation: incoming.affiliation || '',
         orcid: incoming.orcid || '',
         bio: incoming.bio || '',
@@ -919,6 +940,7 @@ async function startServer() {
         bio: newProfile.bio,
         orcid: newProfile.orcid,
         isSample: true,
+        isPublic: false,
         updatedAt: now,
       });
       saveSandboxDb(dbState);
@@ -934,6 +956,7 @@ async function startServer() {
       orcid: incoming.orcid ?? existing.orcid,
       bio: incoming.bio ?? existing.bio,
       country: incoming.country ?? existing.country,
+      publicProfileEnabled: typeof incoming.publicProfileEnabled === 'boolean' ? incoming.publicProfileEnabled : Boolean(existing.publicProfileEnabled),
       updatedAt: now,
     };
     dbState.users[idx] = updated;
@@ -945,6 +968,7 @@ async function startServer() {
       bio: updated.bio,
       orcid: updated.orcid,
       isSample: true,
+      isPublic: Boolean(updated.publicProfileEnabled),
       updatedAt: now,
     };
     if (pubIdx >= 0) dbState.publicProfiles[pubIdx] = pubEntry;

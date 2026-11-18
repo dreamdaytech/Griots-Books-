@@ -339,7 +339,7 @@ export class FirestoreRepository implements IPublishingRepository {
 
   async listPublicAuthors(): Promise<PublicAuthorProfile[]> {
     try {
-      const snap = await getDocs(collection(db, 'publicProfiles'));
+      const snap = await getDocs(query(collection(db, 'publicProfiles'), where('isPublic', '==', true)));
       const rows = snap.docs.map((docSnap) => {
         const d = docSnap.data();
         return {
@@ -383,6 +383,7 @@ export class FirestoreRepository implements IPublishingRepository {
           orcid: clamp(profile.orcid, 40),
           bio: clamp(profile.bio, 2000),
           country: clamp(profile.country, 100),
+          publicProfileEnabled: Boolean(profile.publicProfileEnabled),
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         };
@@ -394,6 +395,7 @@ export class FirestoreRepository implements IPublishingRepository {
           orcid: clamp(profile.orcid, 40),
           bio: clamp(profile.bio, 2000),
           country: clamp(profile.country, 100),
+          publicProfileEnabled: Boolean(profile.publicProfileEnabled),
           updatedAt: serverTimestamp(),
         });
       }
@@ -406,6 +408,7 @@ export class FirestoreRepository implements IPublishingRepository {
         bio: clamp(profile.bio, 2000),
         orcid: clamp(profile.orcid, 40),
         isSample: false,
+        isPublic: Boolean(profile.publicProfileEnabled),
         updatedAt: serverTimestamp(),
       });
 
@@ -1183,14 +1186,27 @@ export class FirestoreRepository implements IPublishingRepository {
       accessType: publication.accessType || 'free',
       price: Number(publication.price ?? 0),
       currency: clamp(publication.currency || 'USD', 10),
-      isbn: clamp(publication.isbn || '', 40),
-      issn: clamp(publication.issn || '', 40),
-      doi: clamp(publication.doi || '', 120),
-      identifierStatus: publication.identifierStatus || 'unassigned',
-      coverUrl: clamp(publication.coverUrl || '', 500),
-      excerpt: clamp(publication.excerpt || '', 12000),
+      isbn: clamp(publication.isbn ?? existingSnap.data()?.isbn ?? '', 40),
+      isbnPrint: clamp(publication.isbnPrint ?? existingSnap.data()?.isbnPrint ?? '', 40),
+      isbnDigital: clamp(publication.isbnDigital ?? existingSnap.data()?.isbnDigital ?? '', 40),
+      issn: clamp(publication.issn ?? existingSnap.data()?.issn ?? '', 40),
+      doi: clamp(publication.doi ?? existingSnap.data()?.doi ?? '', 120),
+      identifierStatus: publication.identifierStatus ?? existingSnap.data()?.identifierStatus ?? 'unassigned',
+      coverUrl: clamp(publication.coverUrl ?? existingSnap.data()?.coverUrl ?? '', 500),
+      language: clamp(publication.language ?? existingSnap.data()?.language ?? '', 60),
+      edition: clamp(publication.edition ?? existingSnap.data()?.edition ?? '', 100),
+      imprint: clamp(publication.imprint ?? existingSnap.data()?.imprint ?? '', 140),
+      series: clamp(publication.series ?? existingSnap.data()?.series ?? '', 140),
+      ...(Number.isInteger(publication.pageCount) && Number(publication.pageCount) > 0 && Number(publication.pageCount) <= 50000
+        ? { pageCount: Number(publication.pageCount) } : {}),
+      ...(Number.isInteger(publication.publicationYear) && Number(publication.publicationYear) >= 1400 && Number(publication.publicationYear) <= 2100
+        ? { publicationYear: Number(publication.publicationYear) } : {}),
+      subjects: (publication.subjects ?? existingSnap.data()?.subjects ?? []).filter((x: unknown): x is string => typeof x === 'string').slice(0, 25).map((x: string) => x.trim().slice(0, 120)).filter(Boolean),
+      tableOfContents: (publication.tableOfContents ?? existingSnap.data()?.tableOfContents ?? []).filter((x: unknown): x is string => typeof x === 'string').slice(0, 80).map((x: string) => x.trim().slice(0, 200)).filter(Boolean),
+      previewEnabled: publication.previewEnabled === true,
+      excerpt: publication.previewEnabled === true ? clamp(publication.excerpt || '', 12000) : '',
       releaseStatus,
-      isSample: Boolean(publication.isSample),
+      isSample: Boolean(publication.isSample ?? existingSnap.data()?.isSample),
       createdAt: existingSnap.exists() ? existingSnap.data().createdAt : serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -1218,7 +1234,7 @@ export class FirestoreRepository implements IPublishingRepository {
       const nowIso = new Date().toISOString();
       return {
         ...(payload as unknown as PublicationRecord),
-        publishedAt: releaseStatus === 'published' ? nowIso : undefined,
+        publishedAt: releaseStatus === 'published' ? (existingSnap.exists() && existingSnap.data().publishedAt ? tsToIso(existingSnap.data().publishedAt) : nowIso) : undefined,
         createdAt: existingSnap.exists() ? tsToIso(existingSnap.data().createdAt) : nowIso,
         updatedAt: nowIso,
       };
