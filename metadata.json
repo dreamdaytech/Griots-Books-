@@ -2,5 +2,7 @@
   "name": "Publishing Platform",
   "description": "Integrated book, article, and academic research publishing management platform with editorial workflows, manuscript versioning, and public catalogue.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
