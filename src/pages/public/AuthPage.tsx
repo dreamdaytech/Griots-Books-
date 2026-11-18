@@ -89,7 +89,7 @@ export function AuthPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10">
           {/* Primary Firebase Authentication */}
           <div className="lg:col-span-7 rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8">
-            <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-[#0F1E36] dark:text-white">
+            <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-[#22170D] dark:text-white">
               Account Access
             </h1>
             <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
@@ -97,7 +97,7 @@ export function AuthPage() {
             </p>
 
             {user && (
-              <div className="mt-4 rounded-lg border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/50 p-3 text-xs text-teal-900 dark:text-teal-200 flex items-center justify-between gap-3">
+              <div className="mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 p-3 text-xs text-amber-900 dark:text-amber-200 flex items-center justify-between gap-3">
                 <span>
                   Signed in as <strong>{user.displayName}</strong> ({authMode})
                 </span>
@@ -115,7 +115,7 @@ export function AuthPage() {
               type="button"
               disabled={busy}
               onClick={handleGoogle}
-              className="mt-6 w-full py-2.5 px-4 rounded-lg bg-[#0F1E36] hover:bg-[#193055] dark:bg-[#0F766E] dark:hover:bg-[#115E59] text-white text-sm font-semibold transition-colors disabled:opacity-50"
+              className="mt-6 w-full py-2.5 px-4 rounded-lg bg-[#22170D] hover:bg-[#382511] dark:bg-[#946000] dark:hover:bg-[#734B00] text-white text-sm font-semibold transition-colors disabled:opacity-50"
             >
               Continue with Google (Live Firebase)
             </button>
@@ -243,7 +243,7 @@ export function AuthPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="w-full py-2.5 px-4 text-sm font-semibold rounded-lg border border-[#0F1E36] text-[#0F1E36] dark:border-teal-500 dark:text-teal-300 hover:bg-[#0F1E36] hover:text-white dark:hover:bg-[#0F766E] dark:hover:text-white transition-colors disabled:opacity-50"
+                className="w-full py-2.5 px-4 text-sm font-semibold rounded-lg border border-[#22170D] text-[#22170D] dark:border-amber-500 dark:text-amber-300 hover:bg-[#22170D] hover:text-white dark:hover:bg-[#946000] dark:hover:text-white transition-colors disabled:opacity-50"
               >
                 {tab === 'signin'
                   ? 'Sign In with Email'
@@ -255,7 +255,7 @@ export function AuthPage() {
           </div>
 
           {/* Sample Evaluation Sandbox */}
-          <div className="lg:col-span-5 rounded-xl border border-stone-200 dark:border-slate-800 bg-[#F3F0EA]/70 dark:bg-slate-900/70 p-6 sm:p-8 flex flex-col justify-between">
+          <div className="lg:col-span-5 rounded-xl border border-stone-200 dark:border-slate-800 bg-[#F1E8DC]/70 dark:bg-slate-900/70 p-6 sm:p-8 flex flex-col justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-amber-800 dark:text-amber-300">
                 Sample Evaluation Workspace
@@ -274,7 +274,7 @@ export function AuthPage() {
                   type="button"
                   disabled={busy}
                   onClick={() => handleSandbox('sandbox_author', '/dashboard')}
-                  className="w-full text-left px-4 py-3 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#0F766E] transition-colors"
+                  className="w-full text-left px-4 py-3 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#946000] transition-colors"
                 >
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">
                     Sample Author — Elena Rostova
@@ -288,7 +288,7 @@ export function AuthPage() {
                   type="button"
                   disabled={busy}
                   onClick={() => handleSandbox('sandbox_researcher', '/dashboard/submit?type=academic_research')}
-                  className="w-full text-left px-4 py-3 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#0F766E] transition-colors"
+                  className="w-full text-left px-4 py-3 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#946000] transition-colors"
                 >
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">
                     Sample Researcher — Dr. Amara Okafor
@@ -302,7 +302,7 @@ export function AuthPage() {
                   type="button"
                   disabled={busy}
                   onClick={() => handleSandbox('sandbox_editor', '/editorial')}
-                  className="w-full text-left px-4 py-3 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#0F766E] transition-colors"
+                  className="w-full text-left px-4 py-3 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#946000] transition-colors"
                 >
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">
                     Sample Managing Editor — Clara Holloway
@@ -316,7 +316,7 @@ export function AuthPage() {
                   type="button"
                   disabled={busy}
                   onClick={() => handleSandbox('sandbox_reviewer', '/editorial')}
-                  className="w-full text-left px-4 py-3 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#0F766E] transition-colors"
+                  className="w-full text-left px-4 py-3 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#946000] transition-colors"
                 >
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">
                     Sample Peer Reviewer — Dr. Samuel Adeyemi
@@ -330,7 +330,7 @@ export function AuthPage() {
                   type="button"
                   disabled={busy}
                   onClick={() => handleSandbox('sandbox_admin', '/admin')}
-                  className="w-full text-left px-4 py-3 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#0F766E] transition-colors"
+                  className="w-full text-left px-4 py-3 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-[#946000] transition-colors"
                 >
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">
                     Sample Admin & Publishing Manager — Arthur Pendelton

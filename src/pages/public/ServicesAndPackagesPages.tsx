@@ -54,7 +54,7 @@ export function ServicesPage({ focus }: { focus?: string }) {
       <section className="py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-[#0F1E36] dark:text-white">
+            <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-[#22170D] dark:text-white">
               {activeHeading.title}
             </h1>
             <p className="mt-3 text-base text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -63,7 +63,7 @@ export function ServicesPage({ focus }: { focus?: string }) {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 to="/dashboard/submit"
-                className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#0F1E36] text-white hover:bg-[#183157] dark:bg-[#0F766E] transition-colors"
+                className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#22170D] text-white hover:bg-[#382511] dark:bg-[#946000] transition-colors"
               >
                 Submit a Manuscript
               </Link>
@@ -82,7 +82,7 @@ export function ServicesPage({ focus }: { focus?: string }) {
                 key={srv.id}
                 className="rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 flex flex-col"
               >
-                <p className="text-xs font-medium text-[#0F766E] dark:text-teal-400">
+                <p className="text-xs font-medium text-[#946000] dark:text-amber-400">
                   {srv.category}
                 </p>
                 <h2 className="mt-2 font-serif text-xl font-semibold text-slate-900 dark:text-white">
@@ -122,7 +122,7 @@ export function PackagesPage() {
       <section className="py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-[#0F1E36] dark:text-white">
+            <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-[#22170D] dark:text-white">
               Publishing Packages & Pricing
             </h1>
             <p className="mt-3 text-base text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -137,14 +137,14 @@ export function PackagesPage() {
                 key={pkg.id}
                 className="rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-7 flex flex-col"
               >
-                <p className="text-xs font-medium text-[#0F766E] dark:text-teal-400">
+                <p className="text-xs font-medium text-[#946000] dark:text-amber-400">
                   Estimated turnaround: {pkg.turnaround}
                 </p>
                 <h2 className="mt-2 font-serif text-2xl font-semibold text-slate-900 dark:text-white">
                   {pkg.name}
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">{pkg.audience}</p>
-                <p className="mt-4 text-lg font-semibold text-[#0F1E36] dark:text-white tabular-nums">
+                <p className="mt-4 text-lg font-semibold text-[#22170D] dark:text-white tabular-nums">
                   {pkg.priceLabel}
                 </p>
                 <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">{pkg.summary}</p>
@@ -172,7 +172,7 @@ export function PackagesPage() {
                 </div>
                 <Link
                   to="/dashboard/submit"
-                  className="mt-6 inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold rounded-lg bg-[#0F1E36] text-white hover:bg-[#193055] dark:bg-[#0F766E] transition-colors"
+                  className="mt-6 inline-flex items-center justify-center px-4 py-2.5 text-sm font-semibold rounded-lg bg-[#22170D] text-white hover:bg-[#382511] dark:bg-[#946000] transition-colors"
                 >
                   Select & Submit Manuscript
                 </Link>

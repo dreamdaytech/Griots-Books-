@@ -70,7 +70,7 @@ export function AuthorDashboardPage({ manuscriptsOnly = false }: { manuscriptsOn
           <Link
             to={`/dashboard/manuscripts/${m.id}`}
             onClick={(e) => e.stopPropagation()}
-            className="font-medium text-slate-900 dark:text-white hover:text-[#0F766E] hover:underline"
+            className="font-medium text-slate-900 dark:text-white hover:text-[#946000] hover:underline"
           >
             {m.title}
           </Link>
@@ -106,7 +106,7 @@ export function AuthorDashboardPage({ manuscriptsOnly = false }: { manuscriptsOn
       actions={
         <Link
           to="/dashboard/submit"
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white hover:bg-[#193055] dark:bg-[#0F766E] whitespace-nowrap"
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-[#22170D] text-white hover:bg-[#382511] dark:bg-[#946000] whitespace-nowrap"
         >
           <FilePlus2 className="w-4 h-4" />
           <span>New Submission</span>
@@ -152,7 +152,7 @@ export function AuthorDashboardPage({ manuscriptsOnly = false }: { manuscriptsOn
                 <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
                   Recent Notifications
                 </h2>
-                <Link to="/dashboard/notifications" className="text-xs font-medium text-[#0F766E] hover:underline">
+                <Link to="/dashboard/notifications" className="text-xs font-medium text-[#946000] hover:underline">
                   View all →
                 </Link>
               </div>
@@ -164,7 +164,7 @@ export function AuthorDashboardPage({ manuscriptsOnly = false }: { manuscriptsOn
                       <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">{n.message}</p>
                     </div>
                     {n.link && (
-                      <Link to={n.link} className="text-xs font-semibold text-[#0F766E] whitespace-nowrap">
+                      <Link to={n.link} className="text-xs font-semibold text-[#946000] whitespace-nowrap">
                         Open
                       </Link>
                     )}
@@ -216,7 +216,7 @@ export function AuthorDashboardPage({ manuscriptsOnly = false }: { manuscriptsOn
           emptyAction={
             <Link
               to="/dashboard/submit"
-              className="inline-flex px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E]"
+              className="inline-flex px-4 py-2 text-xs font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000]"
             >
               Submit First Manuscript
             </Link>

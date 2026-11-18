@@ -152,7 +152,7 @@ export function ProfileSettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E] disabled:opacity-50"
+            className="px-5 py-2.5 text-sm font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000] disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Profile'}
           </button>
@@ -208,7 +208,7 @@ export function NotificationsPage() {
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 {n.link && (
-                  <Link to={n.link} className="text-xs font-semibold text-[#0F766E] hover:underline">
+                  <Link to={n.link} className="text-xs font-semibold text-[#946000] hover:underline">
                     View
                   </Link>
                 )}

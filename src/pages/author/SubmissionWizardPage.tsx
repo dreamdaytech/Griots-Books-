@@ -283,9 +283,9 @@ export function SubmissionWizardPage() {
                 onClick={() => setStep(idx)}
                 className={`px-3.5 py-2 text-xs font-semibold rounded-lg border transition-colors whitespace-nowrap ${
                   step === idx
-                    ? 'bg-[#0F1E36] text-white border-[#0F1E36] dark:bg-[#0F766E] dark:border-[#0F766E]'
+                    ? 'bg-[#22170D] text-white border-[#22170D] dark:bg-[#946000] dark:border-[#946000]'
                     : idx < step
-                      ? 'bg-teal-50 text-teal-900 border-teal-200 dark:bg-teal-950/50 dark:text-teal-200 dark:border-teal-800'
+                      ? 'bg-amber-50 text-amber-900 border-amber-200 dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-800'
                       : 'bg-white text-slate-600 border-stone-200 dark:bg-slate-900 dark:text-slate-300 dark:border-slate-800'
                 }`}
               >
@@ -323,7 +323,7 @@ export function SubmissionWizardPage() {
                   onClick={() => setPublicationType(typeKey)}
                   className={`p-4 text-left rounded-xl border transition-colors ${
                     publicationType === typeKey
-                      ? 'border-[#0F766E] bg-teal-50/50 dark:bg-teal-950/30 ring-1 ring-[#0F766E]'
+                      ? 'border-[#946000] bg-amber-50/50 dark:bg-amber-950/30 ring-1 ring-[#946000]'
                       : 'border-stone-200 dark:border-slate-800 hover:border-stone-400'
                   }`}
                 >
@@ -676,7 +676,7 @@ export function SubmissionWizardPage() {
             </div>
 
             {uploadedVersionCount > 0 && (
-              <div className="rounded-lg border border-teal-200 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/40 p-3 text-xs text-teal-900 dark:text-teal-200">
+              <div className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-3 text-xs text-amber-900 dark:text-amber-200">
                 This draft currently has <strong>v{uploadedVersionCount}</strong> uploaded. Uploading another file will preserve v{uploadedVersionCount} and create a new version.
               </div>
             )}
@@ -685,7 +685,7 @@ export function SubmissionWizardPage() {
               <Upload className="w-8 h-8 mx-auto text-slate-400" />
               <label
                 htmlFor="ms-file-upload"
-                className="mt-3 inline-block cursor-pointer px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E]"
+                className="mt-3 inline-block cursor-pointer px-4 py-2 text-xs font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000]"
               >
                 Choose Manuscript File
               </label>
@@ -731,7 +731,7 @@ export function SubmissionWizardPage() {
               </div>
               <div className="text-right">
                 <p className="text-xs text-slate-500">Estimated Scope Baseline</p>
-                <p className="text-lg font-semibold text-[#0F1E36] dark:text-white tabular-nums">
+                <p className="text-lg font-semibold text-[#22170D] dark:text-white tabular-nums">
                   {estimate.currency} {estimate.estimatedTotal.toLocaleString()}
                   {estimate.hasCustomQuote ? ' + Custom' : ''}
                 </p>
@@ -748,7 +748,7 @@ export function SubmissionWizardPage() {
                     onClick={() => toggleService(srv.id)}
                     className={`p-4 text-left rounded-xl border transition-colors flex items-start justify-between gap-3 ${
                       checked
-                        ? 'border-[#0F766E] bg-teal-50/50 dark:bg-teal-950/30'
+                        ? 'border-[#946000] bg-amber-50/50 dark:bg-amber-950/30'
                         : 'border-stone-200 dark:border-slate-800 hover:border-stone-400'
                     }`}
                   >
@@ -768,7 +768,7 @@ export function SubmissionWizardPage() {
                     <div
                       className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 mt-0.5 ${
                         checked
-                          ? 'bg-[#0F766E] border-[#0F766E] text-white'
+                          ? 'bg-[#946000] border-[#946000] text-white'
                           : 'border-stone-300 dark:border-slate-600'
                       }`}
                     >
@@ -801,7 +801,7 @@ export function SubmissionWizardPage() {
                   onClick={() => setPublicationPreference(opt.val as PublicationPreference)}
                   className={`p-4 text-left rounded-xl border transition-colors ${
                     publicationPreference === opt.val
-                      ? 'border-[#0F766E] bg-teal-50/50 dark:bg-teal-950/30 ring-1 ring-[#0F766E]'
+                      ? 'border-[#946000] bg-amber-50/50 dark:bg-amber-950/30 ring-1 ring-[#946000]'
                       : 'border-stone-200 dark:border-slate-800'
                   }`}
                 >
@@ -886,7 +886,7 @@ export function SubmissionWizardPage() {
               <button
                 type="button"
                 onClick={() => setStep((s) => Math.min(STEPS.length - 1, s + 1))}
-                className="px-5 py-2 text-sm font-semibold rounded-lg bg-[#0F1E36] text-white hover:bg-[#193055] dark:bg-[#0F766E]"
+                className="px-5 py-2 text-sm font-semibold rounded-lg bg-[#22170D] text-white hover:bg-[#382511] dark:bg-[#946000]"
               >
                 Continue
               </button>
@@ -895,7 +895,7 @@ export function SubmissionWizardPage() {
                 type="button"
                 disabled={saving}
                 onClick={() => persistManuscriptAndFile('submitted')}
-                className="px-6 py-2.5 text-sm font-semibold rounded-lg bg-[#0F766E] text-white hover:bg-[#115E59] disabled:opacity-50"
+                className="px-6 py-2.5 text-sm font-semibold rounded-lg bg-[#946000] text-white hover:bg-[#734B00] disabled:opacity-50"
               >
                 {saving ? 'Submitting...' : 'Submit Manuscript'}
               </button>

@@ -166,7 +166,7 @@ export function ManuscriptDetailPage() {
           <p className="mt-2 text-sm text-red-700 dark:text-red-300">{accessError}</p>
           <Link
             to="/dashboard"
-            className="mt-5 inline-flex px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white"
+            className="mt-5 inline-flex px-4 py-2 text-xs font-semibold rounded-lg bg-[#22170D] text-white"
           >
             Return to Dashboard
           </Link>
@@ -185,7 +185,7 @@ export function ManuscriptDetailPage() {
           {manuscript.status === 'draft' && (
             <Link
               to={`/dashboard/submit?draftId=${manuscript.id}`}
-              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E]"
+              className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000]"
             >
               Resume Draft
             </Link>
@@ -240,19 +240,19 @@ export function ManuscriptDetailPage() {
 
           {/* Action Prompts */}
           {manuscript.status === 'awaiting_proof_approval' && (
-            <section className="rounded-xl border border-teal-300 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/40 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <section className="rounded-xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <h2 className="text-base font-semibold text-teal-950 dark:text-teal-100">
+                <h2 className="text-base font-semibold text-amber-950 dark:text-amber-100">
                   Final Proof Approval Requested
                 </h2>
-                <p className="mt-1 text-xs text-teal-800 dark:text-teal-200">
+                <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
                   Review the latest formatted file version below and approve it for publication release.
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setConfirmProof(true)}
-                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F766E] text-white whitespace-nowrap shrink-0"
+                className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#946000] text-white whitespace-nowrap shrink-0"
               >
                 Approve Final Proof
               </button>
@@ -276,7 +276,7 @@ export function ManuscriptDetailPage() {
                   <div key={ver.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-medium text-slate-900 dark:text-white">
-                        <span className="font-mono text-xs mr-2 text-[#0F766E]">v{ver.versionNumber}</span>
+                        <span className="font-mono text-xs mr-2 text-[#946000]">v{ver.versionNumber}</span>
                         {ver.fileName}
                       </p>
                       <p className="text-xs text-slate-500 mt-0.5">
@@ -345,7 +345,7 @@ export function ManuscriptDetailPage() {
                 <button
                   type="submit"
                   disabled={!revFile || uploading}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E] disabled:opacity-40"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000] disabled:opacity-40"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   <span>{uploading ? 'Uploading...' : 'Upload New Version'}</span>
@@ -412,7 +412,7 @@ export function ManuscriptDetailPage() {
               <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
                 Service Quotations
               </h2>
-              <Link to="/dashboard/services" className="text-xs font-semibold text-[#0F766E] hover:underline">
+              <Link to="/dashboard/services" className="text-xs font-semibold text-[#946000] hover:underline">
                 Request Service
               </Link>
             </div>

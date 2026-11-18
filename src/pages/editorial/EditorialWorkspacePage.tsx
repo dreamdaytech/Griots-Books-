@@ -69,7 +69,7 @@ export function EditorialWorkspacePage() {
           <Link
             to={`/editorial/manuscripts/${m.id}`}
             onClick={(e) => e.stopPropagation()}
-            className="font-medium text-slate-900 dark:text-white hover:text-[#0F766E] hover:underline"
+            className="font-medium text-slate-900 dark:text-white hover:text-[#946000] hover:underline"
           >
             {m.title}
           </Link>

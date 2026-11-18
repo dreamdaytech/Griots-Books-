@@ -55,7 +55,7 @@ export function CataloguePage() {
       <section className="py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-[#0F1E36] dark:text-white">
+            <h1 className="font-serif text-3xl sm:text-4xl font-semibold text-[#22170D] dark:text-white">
               Public Publication Catalogue
             </h1>
             <p className="mt-3 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -91,7 +91,7 @@ export function CataloguePage() {
                     onClick={() => handleTypeSelect(tab.value)}
                     className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors ${
                       typeFilter === tab.value
-                        ? 'bg-white dark:bg-slate-900 text-[#0F1E36] dark:text-white shadow-sm'
+                        ? 'bg-white dark:bg-slate-900 text-[#22170D] dark:text-white shadow-sm'
                         : 'text-slate-600 dark:text-slate-300 hover:text-slate-900'
                     }`}
                   >
@@ -132,7 +132,7 @@ export function CataloguePage() {
                 <Link
                   key={pub.id}
                   to={`/catalogue/${pub.id}`}
-                  className="group flex flex-col rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden hover:border-[#0F766E] transition-colors"
+                  className="group flex flex-col rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden hover:border-[#946000] transition-colors"
                 >
                   <div className="aspect-[3/4] w-full overflow-hidden bg-stone-100 dark:bg-slate-800">
                     <CoverImage
@@ -156,7 +156,7 @@ export function CataloguePage() {
                     </p>
                     <div className="mt-4 pt-3 border-t border-stone-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 font-mono">
                       <span>{pub.isbn || pub.doi || 'Identifier Pending'}</span>
-                      <span className="font-sans font-semibold text-[#0F766E]">View Edition →</span>
+                      <span className="font-sans font-semibold text-[#946000]">View Edition →</span>
                     </div>
                   </div>
                 </Link>

@@ -24,7 +24,7 @@ export class ErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen flex items-center justify-center bg-[#FAF9F6] dark:bg-[#0B1220] px-6 py-12">
+        <div className="min-h-screen flex items-center justify-center bg-[#F7F3EE] dark:bg-[#16110C] px-6 py-12">
           <div className="max-w-lg w-full rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8">
             <h1 className="text-2xl font-serif font-semibold text-slate-900 dark:text-slate-100">
               Application Error
@@ -38,7 +38,7 @@ export class ErrorBoundary extends React.Component<
             <button
               type="button"
               onClick={() => window.location.assign('/')}
-              className="mt-6 px-4 py-2 text-sm font-medium rounded-lg bg-[#0F1E36] text-white hover:bg-[#162C4E] transition-colors"
+              className="mt-6 px-4 py-2 text-sm font-medium rounded-lg bg-[#22170D] text-white hover:bg-[#162C4E] transition-colors"
             >
               Return to Homepage
             </button>

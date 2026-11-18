@@ -118,7 +118,7 @@ export function AuthorServicesOrdersPage() {
                       key={srv.id}
                       className={`p-3 rounded-lg border cursor-pointer text-xs flex items-start gap-2.5 ${
                         active
-                          ? 'border-[#0F766E] bg-teal-50/50 dark:bg-teal-950/30'
+                          ? 'border-[#946000] bg-amber-50/50 dark:bg-amber-950/30'
                           : 'border-stone-200 dark:border-slate-800'
                       }`}
                     >
@@ -170,7 +170,7 @@ export function AuthorServicesOrdersPage() {
               <button
                 type="submit"
                 disabled={submitting || manuscripts.length === 0 || selectedServices.length === 0}
-                className="px-5 py-2.5 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white dark:bg-[#0F766E] disabled:opacity-40"
+                className="px-5 py-2.5 text-xs font-semibold rounded-lg bg-[#22170D] text-white dark:bg-[#946000] disabled:opacity-40"
               >
                 {submitting ? 'Submitting...' : 'Submit Quotation Request'}
               </button>

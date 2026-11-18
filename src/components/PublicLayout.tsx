@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, Moon, Sun, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { BrandSignature, BRAND_LOGO_PATH } from './BrandSignature';
 import { usePlatform } from '../context/PlatformContext';
 
 export function PublicLayout({ children }: { children: React.ReactNode }) {
@@ -21,21 +22,18 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF9F6] dark:bg-[#0B1220] text-[#141923] dark:text-[#F3F4F6]">
-      <header className="sticky top-0 z-40 h-16 border-b border-stone-200 dark:border-slate-800 bg-[#FAF9F6]/95 dark:bg-[#0B1220]/95 backdrop-blur-sm">
+    <div className="min-h-screen flex flex-col bg-[#F7F3EE] dark:bg-[#16110C] text-[#241A12] dark:text-[#F8F2EA]">
+      <header className="sticky top-0 z-40 h-16 border-b border-stone-200 dark:border-slate-800 bg-[#F7F3EE]/95 dark:bg-[#16110C]/95 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-8">
-          {/* Zone 1: Single text element wordmark */}
-          <Link
-            to="/"
-            className="font-serif text-xl font-semibold tracking-tight text-[#0F1E36] dark:text-white whitespace-nowrap shrink-0"
-          >
-            {settings.platformName}
+          {/* Griots Books brand identity */}
+          <Link to="/" aria-label={`${settings.platformName} homepage`} className="flex items-center min-w-0 shrink-0">
+            <BrandSignature name={settings.platformName} />
           </Link>
 
           {/* Zone 2: 5 concise single-line text links */}
           <nav
             aria-label="Primary"
-            className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600 dark:text-slate-300"
+            className="hidden md:flex items-center gap-4 lg:gap-7 text-sm font-medium text-slate-600 dark:text-slate-300"
           >
             {navLinks.map((link) => (
               <Link
@@ -43,8 +41,8 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 to={link.to}
                 className={`whitespace-nowrap shrink-0 py-1 border-b-2 transition-colors ${
                   isActive(link.to)
-                    ? 'border-[#0F766E] text-[#0F1E36] dark:text-white'
-                    : 'border-transparent hover:text-[#0F1E36] dark:hover:text-white hover:border-stone-300 dark:hover:border-slate-700'
+                    ? 'border-[#946000] text-[#22170D] dark:text-white'
+                    : 'border-transparent hover:text-[#22170D] dark:hover:text-white hover:border-stone-300 dark:hover:border-slate-700'
                 }`}
               >
                 {link.label}
@@ -56,7 +54,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-3 shrink-0">
             <Link
               to={user ? '/dashboard' : '/auth'}
-              className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-xs font-semibold rounded-lg bg-[#0F1E36] text-white hover:bg-[#193055] dark:bg-[#0F766E] dark:hover:bg-[#115E59] transition-colors whitespace-nowrap shrink-0"
+              className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-xs font-semibold rounded-lg bg-[#22170D] text-white hover:bg-[#382511] dark:bg-[#946000] dark:hover:bg-[#734B00] transition-colors whitespace-nowrap shrink-0"
             >
               {user ? 'Open Portal' : 'Sign In / Submit'}
             </Link>
@@ -87,7 +85,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
             <Link
               to={user ? '/dashboard' : '/auth'}
               onClick={() => setMobileOpen(false)}
-              className="block py-2.5 px-3 rounded-lg text-sm font-semibold text-center bg-[#0F1E36] text-white dark:bg-[#0F766E]"
+              className="block py-2.5 px-3 rounded-lg text-sm font-semibold text-center bg-[#22170D] text-white dark:bg-[#946000]"
             >
               {user ? 'Open Portal' : 'Sign In / Submit'}
             </Link>
@@ -97,15 +95,16 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-stone-200 dark:border-slate-800 bg-[#F3F0EA] dark:bg-slate-950 text-slate-700 dark:text-slate-300">
+      <footer className="border-t border-stone-200 dark:border-slate-800 bg-[#F1E8DC] dark:bg-slate-950 text-slate-700 dark:text-slate-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
             <div>
-              <p className="font-serif text-lg font-semibold text-[#0F1E36] dark:text-white">
-                {settings.platformName}
-              </p>
+              <Link to="/" className="inline-flex" aria-label={`${settings.platformName} homepage`}>
+                <img src={BRAND_LOGO_PATH} alt={`${settings.platformName} — Stories. Memory. Legacy.`} className="w-36 h-auto rounded-md" loading="lazy" />
+              </Link>
+              <p className="mt-3 text-sm font-medium text-[#946000] dark:text-amber-300">Stories. Memory. Legacy.</p>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                {settings.tagline || 'Independent book, article, and scholarly research publishing ecosystem.'}
+                Publishing, editorial services, and research publication support.
               </p>
               <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
                 {settings.contactEmail}
