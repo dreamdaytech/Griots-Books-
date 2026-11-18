@@ -136,7 +136,7 @@ export function AuthorsPage() {
               </select>
             </label>
             <label className="text-xs font-semibold">Sort by
-              <select value={sort} onChange={(e) => setSort(e.target.value)}
+              <select value={sort} onChange={(e) => setSort(e.target.value as 'az' | 'za' | 'most')}
                 className="mt-1 w-full px-3 py-2.5 rounded-lg border border-stone-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-sm">
                 <option value="az">Name A–Z</option><option value="za">Name Z–A</option><option value="most">Most published works</option>
               </select>

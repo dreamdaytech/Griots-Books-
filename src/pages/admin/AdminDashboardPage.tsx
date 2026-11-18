@@ -269,7 +269,7 @@ export function AdminDashboardPage() {
     window.scrollTo?.({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSavePublication = async (releaseStatus: 'approved' | 'published') => {
+  const handleSavePublication = async (releaseStatus: 'approved' | 'published' | 'archived') => {
     if (!pubTitle.trim()) {
       notify('Publication title is required.', 'error');
       return;
@@ -324,9 +324,11 @@ export function AdminDashboardPage() {
       );
       resetPublicationForm();
       notify(
-        releaseStatus === 'published'
-          ? 'Publication released to Public Catalogue!'
-          : 'Publication record saved as Approved.',
+        pubEditingId
+          ? 'Publication metadata updated.'
+          : releaseStatus === 'published'
+            ? 'Publication released to Public Catalogue!'
+            : 'Publication record saved as Approved.',
         'success',
       );
       await loadAdminData();
