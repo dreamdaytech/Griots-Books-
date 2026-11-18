@@ -75,6 +75,7 @@ export function AdminDashboardPage() {
   const [pubPrice, setPubPrice] = useState<number>(0);
   const [pubIsbn, setPubIsbn] = useState('');
   const [pubDoi, setPubDoi] = useState('');
+  const [pubIdentifierStatus, setPubIdentifierStatus] = useState<'unassigned' | 'pending_registration' | 'verified'>('unassigned');
   const [pubAbstract, setPubAbstract] = useState('');
   const [pubEditingId, setPubEditingId] = useState<string | null>(null);
   const [pubMetadata, setPubMetadata] = useState<PublicationMetadataFormData>(EMPTY_PUBLICATION_METADATA);
@@ -216,6 +217,7 @@ export function AdminDashboardPage() {
     setPubPrice(0);
     setPubIsbn('');
     setPubDoi('');
+    setPubIdentifierStatus('unassigned');
     setPubAbstract('');
     setPubMetadata({ ...EMPTY_PUBLICATION_METADATA });
   };
@@ -249,6 +251,7 @@ export function AdminDashboardPage() {
     setPubPrice(publication.price || 0);
     setPubIsbn(publication.isbn || '');
     setPubDoi(publication.doi || '');
+    setPubIdentifierStatus(publication.identifierStatus || 'unassigned');
     setPubAbstract(publication.abstract || '');
     setPubMetadata({
       category: publication.category || '',
@@ -272,6 +275,11 @@ export function AdminDashboardPage() {
   const handleSavePublication = async (releaseStatus: 'approved' | 'published' | 'archived') => {
     if (!pubTitle.trim()) {
       notify('Publication title is required.', 'error');
+      return;
+    }
+    if (pubIdentifierStatus === 'verified' &&
+        !(pubIsbn.trim() || pubMetadata.isbnPrint.trim() || pubMetadata.isbnDigital.trim() || pubDoi.trim())) {
+      notify('Verified status requires at least one official identifier.', 'error');
       return;
     }
     if (pubMetadata.previewEnabled && !pubMetadata.previewText.trim()) {
@@ -303,7 +311,7 @@ export function AdminDashboardPage() {
           isbnPrint: pubMetadata.isbnPrint.trim(),
           isbnDigital: pubMetadata.isbnDigital.trim(),
           doi: pubDoi.trim(),
-          identifierStatus: (pubIsbn.trim() || pubMetadata.isbnPrint.trim() || pubMetadata.isbnDigital.trim() || pubDoi.trim()) ? 'verified' : 'unassigned',
+          identifierStatus: pubIdentifierStatus,
           abstract: pubAbstract.trim(),
           category: pubMetadata.category.trim(),
           language: pubMetadata.language.trim(),
@@ -726,6 +734,17 @@ export function AdminDashboardPage() {
                     className="w-full px-3 py-2 text-xs font-mono rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950"
                   />
                 </div>
+              </div>
+              <div>
+                <label htmlFor="pub-id-status" className="block text-xs font-semibold mb-1">Identifier Registration Status</label>
+                <select id="pub-id-status" value={pubIdentifierStatus}
+                  onChange={(e) => setPubIdentifierStatus(e.target.value as 'unassigned' | 'pending_registration' | 'verified')}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950">
+                  <option value="unassigned">Unassigned</option>
+                  <option value="pending_registration">Registration pending</option>
+                  <option value="verified">Verified by official agency (confirmation required)</option>
+                </select>
+                <p className="mt-1 text-xs text-slate-500">Only select Verified after checking the official registration evidence. Typing an identifier alone does not verify it.</p>
               </div>
               <div>
                 <label htmlFor="pub-abs" className="block text-xs font-semibold mb-1">Catalogue Description</label>

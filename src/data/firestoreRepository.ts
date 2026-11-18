@@ -1211,7 +1211,10 @@ export class FirestoreRepository implements IPublishingRepository {
       updatedAt: serverTimestamp(),
     };
     if (releaseStatus === 'published') {
-      payload.publishedAt = serverTimestamp();
+      // Editing metadata of an existing release must not reset its publication date.
+      payload.publishedAt = existingSnap.exists() && existingSnap.data()?.publishedAt
+        ? existingSnap.data().publishedAt
+        : serverTimestamp();
     } else if (existingSnap.exists() && existingSnap.data()?.publishedAt) {
       payload.publishedAt = existingSnap.data().publishedAt;
     }
