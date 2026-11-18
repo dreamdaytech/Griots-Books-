@@ -24,3 +24,21 @@ jobs:
         run: bun test src/domain/workflow.test.ts src/domain/peerReview.test.ts src/domain/firebaseDiagnostics.test.ts src/domain/publications.test.ts
       - name: Production frontend build
         run: bun run build
+
+  firestore-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Final Firestore rules — offline named-database smoke test
+        run: npx --yes firebase-tools@latest emulators:exec --only firestore --project demo-griots-books --config firebase.json "node scripts/firestore-emulator-smoke.mjs"
+      - name: Temporary compatibility rules — offline named-database smoke test
+        env:
+          GRIOTS_FIRESTORE_RULESET: transition
+        run: npx --yes firebase-tools@latest emulators:exec --only firestore --project demo-griots-books --config firebase.transition.json "node scripts/firestore-emulator-smoke.mjs"
