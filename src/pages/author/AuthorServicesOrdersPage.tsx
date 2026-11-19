@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { PortalLayout } from '../../components/PortalLayout';
 import { useAuth } from '../../context/AuthContext';
 import { usePlatform } from '../../context/PlatformContext';
@@ -83,6 +84,11 @@ export function AuthorServicesOrdersPage() {
             Select a manuscript and required services. Estimated totals are preliminary until confirmed by an administrator.
           </p>
 
+          <p className="mt-3 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            Quotations do not constitute confirmed paid orders. Read the draft
+            <Link to="/policies/terms" className="mx-1 text-[#946000] dark:text-amber-400 underline">service terms</Link>
+            before requesting work; final price, rights, cancellation terms and deliverables require separate confirmation.
+          </p>
           <form onSubmit={handleRequestQuote} className="mt-5 space-y-5">
             <div>
               <label htmlFor="quote-ms" className="block text-xs font-semibold mb-1">
