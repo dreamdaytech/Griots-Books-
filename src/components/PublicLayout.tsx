@@ -151,7 +151,7 @@ export function PublicLayout({ children }: { children: React.ReactNode }) {
                 <li><Link to="/policies/privacy" className="hover:underline">Privacy Policy (Draft)</Link></li>
                 <li><Link to="/policies/terms" className="hover:underline">Terms & Conditions (Draft)</Link></li>
                 <li><Link to="/policies/copyright" className="hover:underline">Copyright & Licensing (Draft)</Link></li>
-                <li><Link to="/policies/editorial" className="hover:underline">Editorial & Peer Review Policy</Link></li>
+                <li><Link to="/policies/editorial" className="hover:underline">Editorial &amp; Peer Review Policy (Draft)</Link></li>
               </ul>
               <div className="mt-6">
                 <button

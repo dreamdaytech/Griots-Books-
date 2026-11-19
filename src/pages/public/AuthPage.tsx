@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ShieldAlert } from 'lucide-react';
 import { PublicLayout } from '../../components/PublicLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -111,6 +111,9 @@ export function AuthPage() {
               </div>
             )}
 
+            <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400 mt-4">
+              Account and sign-in information is handled as outlined in the current <Link to="/policies/privacy" className="underline text-[#946000] dark:text-amber-400">draft Privacy Policy</Link>.
+            </p>
             <button
               type="button"
               disabled={busy}
@@ -201,6 +204,11 @@ export function AuthPage() {
                         className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950"
                       />
                     </div>
+                  </div>
+                  <div className="rounded-lg border border-[#D9B36A]/50 bg-[#FAF7F0] dark:bg-slate-950 p-3 text-xs leading-relaxed text-slate-700 dark:text-slate-300">
+                    Before registering, review our <Link className="underline font-semibold text-[#946000] dark:text-amber-400" to="/policies/privacy">Privacy Policy</Link> and{' '}
+                    <Link className="underline font-semibold text-[#946000] dark:text-amber-400" to="/policies/terms">Terms &amp; Conditions</Link>.
+                    These documents are under owner and legal review; this notice does not record acceptance of final contractual terms.
                   </div>
                   <p className="text-xs text-slate-500">
                     Public registration assigns standard Author or Researcher permissions. Privileged
