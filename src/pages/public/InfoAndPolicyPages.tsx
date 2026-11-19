@@ -4,6 +4,9 @@ import { PublicLayout } from '../../components/PublicLayout';
 import { usePlatform } from '../../context/PlatformContext';
 import { ASSET_IMAGES, PUBLIC_FAQS } from '../../data/seedData';
 import { CoverImage } from '../../components/CoverImage';
+import {
+  POLICY_DOCUMENTS, POLICY_LAST_REVIEWED, POLICY_REVIEW_VERSION, POLICY_SLUGS, isPolicySlug,
+} from '../../domain/policyContent';
 
 export function AboutPage() {
   const { settings } = usePlatform();
@@ -285,58 +288,136 @@ export function ContactPage() {
   );
 }
 
-const POLICY_COPY: Record<string, { title: string; body: string[] }> = {
-  privacy: {
-    title: 'Privacy Policy (Draft Template — Pending Owner Approval)',
-    body: [
-      'DRAFT NOTICE: This document is a working policy placeholder awaiting legal review and approval by the platform owner.',
-      'User account emails, institutional affiliations, and private manuscript files are isolated by strict role-based access rules and are never exposed in public catalogue queries.',
-      'Confidential editorial notes and peer-review assessments are restricted exclusively to authorized editorial personnel.',
-    ],
-  },
-  terms: {
-    title: 'Terms and Conditions (Draft Template — Pending Owner Approval)',
-    body: [
-      'DRAFT NOTICE: Replace this draft with jurisdiction-specific publishing terms approved by legal counsel prior to commercial launch.',
-      'Authors submitting manuscripts warrant that the submitted work is original or that they hold sufficient rights to authorize editorial assessment and requested production services.',
-      'Service quotations distinguish non-binding estimates from confirmed production orders and verified payments.',
-    ],
-  },
-  copyright: {
-    title: 'Copyright and Licensing Policies (Draft Template — Pending Owner Approval)',
-    body: [
-      'DRAFT NOTICE: Licensing options (exclusive publishing agreement, non-exclusive distribution, or Creative Commons open access) must be finalized by the platform owner.',
-      'Submitting a manuscript for assessment does not transfer copyright unless a formal publishing agreement is executed.',
-    ],
-  },
-  editorial: {
-    title: 'Editorial and Peer Review Policies',
-    body: [
-      'All editorial decisions rest with authorized Editors, Managing Editors, and Editors-in-Chief.',
-      'Academic submissions support single-anonymous, double-anonymous, or open peer-review configurations depending on journal policy.',
-      'Commercial editing, formatting, and design fees are completely independent of editorial acceptance decisions.',
-    ],
-  },
-};
 
 export function PolicyPage() {
   const { slug } = useParams<{ slug: string }>();
-  const policy = (slug && POLICY_COPY[slug]) || POLICY_COPY.editorial;
+  const { settings } = usePlatform();
+
+  if (!isPolicySlug(slug)) {
+    return (
+      <PublicLayout>
+        <section className="max-w-2xl mx-auto px-4 py-20 text-center">
+          <p className="text-xs uppercase tracking-widest text-[#946000] font-semibold">404 · Policy not found</p>
+          <h1 className="font-serif text-3xl mt-3 font-semibold text-[#22170D] dark:text-white">This policy page is not available</h1>
+          <p className="text-sm mt-4 text-slate-600 dark:text-slate-300">Check the address or explore a governance document.</p>
+          <Link to="/policies/privacy" className="mt-6 inline-flex px-5 py-2.5 rounded-lg bg-[#22170D] dark:bg-[#946000] text-white text-sm font-semibold">View Privacy Policy</Link>
+        </section>
+      </PublicLayout>
+    );
+  }
+
+  const policy = POLICY_DOCUMENTS[slug];
+  const contactEmail = settings.contactEmail?.trim() || '';
+  const hasApprovedContact = Boolean(contactEmail && !contactEmail.endsWith('.example') && !contactEmail.includes('[Draft'));
+  const related = POLICY_SLUGS.filter((other) => other !== slug);
 
   return (
     <PublicLayout>
-      <section className="py-12 lg:py-16">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="font-serif text-3xl font-semibold text-[#22170D] dark:text-white">
-            {policy.title}
-          </h1>
-          <div className="mt-6 space-y-4 text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed">
-            {policy.body.map((paragraph, i) => (
-              <p key={i}>{paragraph}</p>
-            ))}
+      <article className="bg-[#F7F3EE] dark:bg-[#16110C]">
+        <header className="border-b border-[#D9B36A]/40 bg-[#22170D] text-[#F8F2EA] print:bg-white print:text-black">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+            <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[#E5BA69] print:text-slate-700">
+              Griots Books · Policies & Governance
+            </p>
+            <h1 className="mt-3 font-serif text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight">{policy.title}</h1>
+            <p className="mt-3 max-w-3xl text-base sm:text-lg text-[#E8DDCB] print:text-slate-700">{policy.subtitle}</p>
+            <dl className="mt-7 flex flex-wrap gap-x-8 gap-y-3 text-xs text-[#D4C5AF] print:text-slate-600">
+              <div><dt className="font-semibold uppercase tracking-wider">Document</dt><dd className="mt-1">Review draft</dd></div>
+              <div><dt className="font-semibold uppercase tracking-wider">Last reviewed</dt><dd className="mt-1">{POLICY_LAST_REVIEWED}</dd></div>
+              <div><dt className="font-semibold uppercase tracking-wider">Version</dt><dd className="mt-1 font-mono">{POLICY_REVIEW_VERSION}</dd></div>
+              <div><dt className="font-semibold uppercase tracking-wider">Effective date</dt><dd className="mt-1">Pending approval</dd></div>
+            </dl>
+          </div>
+        </header>
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-9 sm:py-12">
+          <div role="note" className="border-l-4 border-[#946000] bg-[#F1E8DC] dark:bg-[#322518] dark:border-[#D69B18] rounded-r-lg px-5 py-4 text-sm leading-relaxed text-[#382B1B] dark:text-[#F4E7D5] print:border print:bg-white">
+            <strong className="block mb-1 font-semibold">Working draft — not yet approved or in effect</strong>
+            These sections are proposed governance language for owner, editorial and legal review. Commercial terms, operator identity,
+            privacy processes, governing law and implementation details must be verified before this document can become a final policy.
+            This page does not replace a separately signed publishing or service agreement.
+          </div>
+
+          <div className="mt-9 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
+            <aside className="lg:col-span-4 print:hidden">
+              <nav aria-label={'Sections in ' + policy.title} className="lg:sticky lg:top-24 rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5">
+                <h2 className="text-sm uppercase tracking-wide font-semibold text-[#22170D] dark:text-white">On this page</h2>
+                <ol className="mt-4 space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                  {policy.sections.map((section) => (
+                    <li key={section.id}>
+                      <a href={'#' + section.id} className="block py-1.5 hover:underline hover:text-[#946000] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#946000]">
+                        {section.heading}
+                      </a>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            </aside>
+
+            <div className="lg:col-span-8 min-w-0">
+              <p className="text-base text-slate-700 dark:text-slate-200 leading-8">{policy.overview}</p>
+
+              <div className="mt-9 space-y-11">
+                {policy.sections.map((section) => (
+                  <section id={section.id} key={section.id} aria-labelledby={'heading-' + section.id} className="scroll-mt-24 break-inside-avoid">
+                    <h2 id={'heading-' + section.id} className="font-serif text-xl sm:text-2xl font-semibold text-[#22170D] dark:text-white leading-snug">
+                      {section.heading}
+                    </h2>
+                    <div className="mt-4 space-y-3 text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-7">
+                      {section.paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
+                      {section.bullets && (
+                        <ul className="list-disc pl-6 space-y-2 marker:text-[#946000]">
+                          {section.bullets.map((item, index) => <li key={index}>{item}</li>)}
+                        </ul>
+                      )}
+                      {section.note && <p className="rounded-lg border border-[#D9B36A]/40 bg-[#FAF7F0] dark:bg-slate-900 p-4 text-sm">{section.note}</p>}
+                    </div>
+                  </section>
+                ))}
+              </div>
+
+              {policy.references && policy.references.length > 0 && (
+                <section aria-labelledby="policy-references" className="mt-12 pt-6 border-t border-stone-200 dark:border-slate-800">
+                  <h2 id="policy-references" className="text-lg font-semibold text-[#22170D] dark:text-white">Further reading</h2>
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">External reference materials are not contractual provisions.</p>
+                  <ul className="mt-3 list-disc pl-5 text-sm space-y-2">
+                    {policy.references.map((item) => (
+                      <li key={item.url}><a className="text-[#946000] dark:text-amber-400 underline" href={item.url} target="_blank" rel="noopener noreferrer">{item.label}</a></li>
+                    ))}
+                  </ul>
+                </section>
+              )}
+
+              <section aria-labelledby="policy-contact" className="mt-12 rounded-xl border border-stone-200 dark:border-slate-800 p-6 bg-white dark:bg-slate-900 print:bg-white">
+                <h2 id="policy-contact" className="font-serif text-xl font-semibold text-[#22170D] dark:text-white">Questions or requests?</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                  Contact the editorial office about this draft or an account, submission, rights or data-handling question.
+                  Do not include passwords or private documents in your initial message.
+                </p>
+                {hasApprovedContact && (
+                  <p className="mt-3 text-sm">
+                    <a className="font-semibold text-[#946000] dark:text-amber-400 underline break-all" href={'mailto:' + contactEmail}>{contactEmail}</a>
+                  </p>
+                )}
+                <Link to="/contact" className="mt-4 inline-flex px-4 py-2.5 rounded-lg bg-[#22170D] dark:bg-[#946000] text-white text-sm font-semibold print:hidden">Contact Editorial Office</Link>
+              </section>
+
+              <section aria-labelledby="related-policies" className="mt-10 pt-6 border-t border-stone-200 dark:border-slate-800 print:hidden">
+                <h2 id="related-policies" className="text-lg font-semibold text-[#22170D] dark:text-white">Related policies</h2>
+                <ul className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {related.map((key) => (
+                    <li key={key}>
+                      <Link to={'/policies/' + key} className="block rounded-lg border border-stone-300 dark:border-slate-700 p-4 text-sm font-medium hover:border-[#946000] hover:text-[#946000]">
+                        {POLICY_DOCUMENTS[key].title} <span aria-hidden="true">→</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            </div>
           </div>
         </div>
-      </section>
+      </article>
     </PublicLayout>
   );
 }

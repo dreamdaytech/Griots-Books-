@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Check, Plus, Trash2, Upload } from 'lucide-react';
 import { PortalLayout } from '../../components/PortalLayout';
 import { useAuth } from '../../context/AuthContext';
@@ -864,9 +864,16 @@ export function SubmissionWizardPage() {
               <span className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                 I confirm that I am the author or authorized representative for this manuscript,
                 possess the necessary rights to submit it for editorial review, and accept the
-                platform Editorial, Peer Review, and Submission policies.
+                platform submission declaration. I have reviewed the currently available draft
+                <Link to="/policies/editorial" className="mx-1 underline font-semibold text-[#946000] dark:text-amber-400">Editorial &amp; Peer Review Policy</Link>
+                and <Link to="/policies/copyright" className="underline font-semibold text-[#946000] dark:text-amber-400">Copyright &amp; Licensing</Link> guidance.
+                A separate publishing contract is required for any copyright transfer or public rights grant.
               </span>
             </label>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              These policy pages are review drafts, not yet legally approved. Your existing authorship declaration remains part of the manuscript submission process;
+              it does not authorize public release or record acceptance of final publishing terms.
+            </p>
           </div>
         )}
 

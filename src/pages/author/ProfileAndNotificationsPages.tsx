@@ -149,6 +149,11 @@ export function ProfileSettingsPage() {
             />
           </div>
 
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            Learn how account data, biographies and confidential submissions are handled in our
+            <Link to="/policies/privacy" className="ml-1 underline text-[#946000] dark:text-amber-400">draft Privacy Policy</Link>.
+            Account profile edits do not automatically license or publish a manuscript.
+          </p>
           <button
             type="submit"
             disabled={saving}

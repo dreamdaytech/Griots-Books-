@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CheckCircle2, ClipboardCheck, Lock, Plus, Trash2, UserPlus } from 'lucide-react';
 import {
   ANNOTATION_SEVERITY_LABELS,
@@ -239,6 +240,13 @@ export function PeerReviewModule({
           </span>{' '}
           reviewer{assignedReviewerIds.length === 1 ? '' : 's'} assigned
         </div>
+      </div>
+
+      <div className="rounded-lg border border-[#D9B36A]/40 bg-[#FAF7F0] dark:bg-slate-950 p-3 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+        Confidentiality reminder: assigned manuscripts and private review notes should remain in authorized editorial workflows.
+        Do not upload confidential reviews or manuscripts to external AI systems without approved permission. Consult the
+        <Link to="/policies/editorial" className="mx-1 underline text-[#946000] dark:text-amber-400 font-semibold">draft Editorial &amp; Peer Review Policy</Link>
+        for conduct and conflict-of-interest guidance.
       </div>
 
       {/* Reviewer Assignment Roster */}
