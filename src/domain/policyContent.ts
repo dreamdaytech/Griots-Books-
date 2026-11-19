@@ -406,7 +406,7 @@ export const POLICY_DOCUMENTS: Record<PolicySlug, PolicyDocument> = {
         heading: '10. Corrections, concerns and retractions',
         paragraphs: [
           'After publication, credible errors or misconduct allegations may warrant a correction, expression of concern, withdrawal or retraction, depending on evidence and applicable standards. The scholarly record should retain transparent notices and an explanation where appropriate.',
-          'Removal requests involving copyright, privacy, safety and research ethics require separate assessment. A published item's identifier and citation record should not be silently repurposed.'
+          'Removal requests involving copyright, privacy, safety and research ethics require separate assessment. A published item’s identifier and citation record should not be silently repurposed.'
         ],
       },
       {
