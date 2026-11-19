@@ -27,6 +27,7 @@ export interface UserProfile {
   orcid?: string;
   bio?: string;
   country?: string;
+  publicProfileEnabled?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -39,6 +40,7 @@ export interface PublicAuthorProfile {
   orcid?: string;
   discipline?: string;
   isSample: boolean;
+  isPublic?: boolean;
   updatedAt: string;
 }
 
@@ -309,12 +311,23 @@ export interface PublicationRecord {
   accessType: AccessType;
   price?: number;
   currency?: string;
-  isbn?: string;
+  isbn?: string; // Legacy single-format ISBN; retain for backwards compatibility
+  isbnPrint?: string;
+  isbnDigital?: string;
   issn?: string;
   doi?: string;
   identifierStatus?: IdentifierStatus;
   coverUrl?: string;
-  excerpt?: string;
+  language?: string;
+  edition?: string;
+  imprint?: string;
+  series?: string;
+  publicationYear?: number;
+  pageCount?: number;
+  subjects?: string[];
+  tableOfContents?: string[];
+  excerpt?: string; // Only approved public-preview text, never raw manuscript content
+  previewEnabled?: boolean; // Explicit Publishing Manager approval; defaults to false
   releaseStatus: ReleaseStatus;
   isSample: boolean;
   publishedAt?: string;

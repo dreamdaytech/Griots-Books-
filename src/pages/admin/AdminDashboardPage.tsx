@@ -1,5 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { DataTable, type TableColumn } from '../../components/DataTable';
+import {
+  PublicationMetadataFields, EMPTY_PUBLICATION_METADATA,
+  type PublicationMetadataFormData,
+} from '../../components/PublicationMetadataFields';
+import { parseListInput, sanitisePublicationPreview } from '../../domain/publications';
 import { PortalLayout } from '../../components/PortalLayout';
 import { StatusBadge } from '../../components/StatusBadge';
 import { useAuth } from '../../context/AuthContext';
@@ -70,7 +75,10 @@ export function AdminDashboardPage() {
   const [pubPrice, setPubPrice] = useState<number>(0);
   const [pubIsbn, setPubIsbn] = useState('');
   const [pubDoi, setPubDoi] = useState('');
+  const [pubIdentifierStatus, setPubIdentifierStatus] = useState<'unassigned' | 'pending_registration' | 'verified'>('unassigned');
   const [pubAbstract, setPubAbstract] = useState('');
+  const [pubEditingId, setPubEditingId] = useState<string | null>(null);
+  const [pubMetadata, setPubMetadata] = useState<PublicationMetadataFormData>(EMPTY_PUBLICATION_METADATA);
 
   // Platform Settings Form
   const [cfgName, setCfgName] = useState(settings.platformName);
@@ -197,23 +205,99 @@ export function AdminDashboardPage() {
     }
   };
 
+  const resetPublicationForm = () => {
+    setPubEditingId(null);
+    setPubTitle('');
+    setPubAuthorName('');
+    setPubAuthorId('');
+    setPubManuscriptId('');
+    setPubType('book');
+    setPubFormat('digital');
+    setPubAccess('free');
+    setPubPrice(0);
+    setPubIsbn('');
+    setPubDoi('');
+    setPubIdentifierStatus('unassigned');
+    setPubAbstract('');
+    setPubMetadata({ ...EMPTY_PUBLICATION_METADATA });
+  };
+
   const handlePrefillFromManuscript = (ms: Manuscript) => {
+    resetPublicationForm();
     setPubManuscriptId(ms.id);
     setPubTitle(ms.title);
     setPubAuthorName(ms.authorName);
     setPubAuthorId(ms.authorId);
     setPubType(ms.publicationType);
     setPubAbstract(ms.abstract || '');
+    setPubMetadata({
+      ...EMPTY_PUBLICATION_METADATA,
+      category: ms.category || '',
+      language: ms.language || '',
+      pageCount: ms.pageCount ? String(ms.pageCount) : '',
+    });
   };
 
-  const handleSavePublication = async (releaseStatus: 'approved' | 'published') => {
+  const handleEditPublication = (publication: PublicationRecord) => {
+    setTab('publications');
+    setPubEditingId(publication.id);
+    setPubTitle(publication.title);
+    setPubAuthorName(publication.authorName);
+    setPubAuthorId(publication.authorId);
+    setPubManuscriptId(publication.manuscriptId || '');
+    setPubType(publication.publicationType);
+    setPubFormat(publication.format);
+    setPubAccess(publication.accessType);
+    setPubPrice(publication.price || 0);
+    setPubIsbn(publication.isbn || '');
+    setPubDoi(publication.doi || '');
+    setPubIdentifierStatus(publication.identifierStatus || 'unassigned');
+    setPubAbstract(publication.abstract || '');
+    setPubMetadata({
+      category: publication.category || '',
+      language: publication.language || '',
+      edition: publication.edition || '',
+      imprint: publication.imprint || '',
+      series: publication.series || '',
+      pageCount: publication.pageCount ? String(publication.pageCount) : '',
+      publicationYear: publication.publicationYear ? String(publication.publicationYear) : '',
+      subjectsText: (publication.subjects || []).join(', '),
+      contentsText: (publication.tableOfContents || []).join('\n'),
+      coverUrl: publication.coverUrl || '',
+      isbnPrint: publication.isbnPrint || '',
+      isbnDigital: publication.isbnDigital || '',
+      previewText: publication.previewEnabled ? publication.excerpt || '' : '',
+      previewEnabled: Boolean(publication.previewEnabled),
+    });
+    window.scrollTo?.({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleSavePublication = async (releaseStatus: 'approved' | 'published' | 'archived') => {
     if (!pubTitle.trim()) {
       notify('Publication title is required.', 'error');
       return;
     }
+    if (pubIdentifierStatus === 'verified' &&
+        !(pubIsbn.trim() || pubMetadata.isbnPrint.trim() || pubMetadata.isbnDigital.trim() || pubDoi.trim())) {
+      notify('Verified status requires at least one official identifier.', 'error');
+      return;
+    }
+    if (pubMetadata.previewEnabled && !pubMetadata.previewText.trim()) {
+      notify('Provide the approved preview text or disable the public preview.', 'error');
+      return;
+    }
+    const pageCount = pubMetadata.pageCount ? Number(pubMetadata.pageCount) : undefined;
+    const year = pubMetadata.publicationYear ? Number(pubMetadata.publicationYear) : undefined;
+    if ((pageCount !== undefined && (!Number.isInteger(pageCount) || pageCount < 1 || pageCount > 50000)) ||
+        (year !== undefined && (!Number.isInteger(year) || year < 1400 || year > 2100))) {
+      notify('Enter a valid whole-number page count and publication year.', 'error');
+      return;
+    }
+    const existing = pubEditingId ? publications.find((item) => item.id === pubEditingId) : undefined;
     try {
       await repo.savePublication(
         {
+          id: pubEditingId || undefined,
           manuscriptId: pubManuscriptId || undefined,
           authorId: pubAuthorId || user.uid,
           authorName: pubAuthorName || user.displayName,
@@ -224,23 +308,35 @@ export function AdminDashboardPage() {
           price: Number(pubPrice) || 0,
           currency: 'USD',
           isbn: pubIsbn.trim(),
+          isbnPrint: pubMetadata.isbnPrint.trim(),
+          isbnDigital: pubMetadata.isbnDigital.trim(),
           doi: pubDoi.trim(),
-          identifierStatus: pubIsbn.trim() || pubDoi.trim() ? 'verified' : 'unassigned',
+          identifierStatus: pubIdentifierStatus,
           abstract: pubAbstract.trim(),
+          category: pubMetadata.category.trim(),
+          language: pubMetadata.language.trim(),
+          edition: pubMetadata.edition.trim(),
+          imprint: pubMetadata.imprint.trim(),
+          series: pubMetadata.series.trim(),
+          coverUrl: pubMetadata.coverUrl.trim(),
+          pageCount,
+          publicationYear: year,
+          subjects: parseListInput(pubMetadata.subjectsText, 25, 120),
+          tableOfContents: parseListInput(pubMetadata.contentsText, 80, 200),
+          previewEnabled: pubMetadata.previewEnabled,
+          excerpt: sanitisePublicationPreview(pubMetadata.previewText, pubMetadata.previewEnabled),
           releaseStatus,
-          isSample: false,
+          isSample: existing?.isSample ?? false,
         },
         user,
       );
-      setPubTitle('');
-      setPubAbstract('');
-      setPubManuscriptId('');
-      setPubIsbn('');
-      setPubDoi('');
+      resetPublicationForm();
       notify(
-        releaseStatus === 'published'
-          ? 'Publication released to Public Catalogue!'
-          : 'Publication record saved as Approved.',
+        pubEditingId
+          ? 'Publication metadata updated.'
+          : releaseStatus === 'published'
+            ? 'Publication released to Public Catalogue!'
+            : 'Publication record saved as Approved.',
         'success',
       );
       await loadAdminData();
@@ -532,7 +628,10 @@ export function AdminDashboardPage() {
       {tab === 'publications' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-5 rounded-xl border border-stone-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 space-y-4">
-            <h2 className="font-serif text-xl font-semibold">Prepare / Release Catalogue Edition</h2>
+            <div className="flex justify-between items-start gap-3">
+              <h2 className="font-serif text-xl font-semibold">{pubEditingId ? 'Edit Publication Metadata' : 'Prepare / Release Catalogue Edition'}</h2>
+              {pubEditingId && <button type="button" onClick={resetPublicationForm} className="px-3 py-1.5 rounded-md border border-stone-300 dark:border-slate-700 text-xs font-semibold">Cancel edit</button>}
+            </div>
             <p className="text-xs text-slate-500">
               Only enter verified ISBN, ISSN, or DOI strings issued by authorized agencies. Never fabricate unverified identifiers.
             </p>
@@ -637,6 +736,17 @@ export function AdminDashboardPage() {
                 </div>
               </div>
               <div>
+                <label htmlFor="pub-id-status" className="block text-xs font-semibold mb-1">Identifier Registration Status</label>
+                <select id="pub-id-status" value={pubIdentifierStatus}
+                  onChange={(e) => setPubIdentifierStatus(e.target.value as 'unassigned' | 'pending_registration' | 'verified')}
+                  className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950">
+                  <option value="unassigned">Unassigned</option>
+                  <option value="pending_registration">Registration pending</option>
+                  <option value="verified">Verified by official agency (confirmation required)</option>
+                </select>
+                <p className="mt-1 text-xs text-slate-500">Only select Verified after checking the official registration evidence. Typing an identifier alone does not verify it.</p>
+              </div>
+              <div>
                 <label htmlFor="pub-abs" className="block text-xs font-semibold mb-1">Catalogue Description</label>
                 <textarea
                   id="pub-abs"
@@ -646,13 +756,14 @@ export function AdminDashboardPage() {
                   className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950"
                 />
               </div>
+              <PublicationMetadataFields value={pubMetadata} onChange={setPubMetadata} />
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => void handleSavePublication('approved')}
+                  onClick={() => void handleSavePublication(pubEditingId ? publications.find((item) => item.id === pubEditingId)?.releaseStatus || 'approved' : 'approved')}
                   className="flex-1 py-2 text-xs font-semibold rounded-lg border border-stone-300 dark:border-slate-700"
                 >
-                  Save as Approved (Hidden)
+                  {pubEditingId ? 'Save Metadata (Keep Status)' : 'Save as Approved (Hidden)'}
                 </button>
                 <button
                   type="button"
@@ -681,15 +792,18 @@ export function AdminDashboardPage() {
                     {p.authorName} · Status: <strong className="capitalize">{p.releaseStatus}</strong> · {p.isbn || p.doi || 'No verified identifier'}
                   </p>
                 </div>
-                {p.releaseStatus !== 'published' && (
-                  <button
-                    type="button"
-                    onClick={() => void handleReleaseExisting(p)}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#946000] text-white shrink-0"
-                  >
-                    Release Publicly
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button type="button" onClick={() => handleEditPublication(p)}
+                    className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-stone-300 dark:border-slate-700">
+                    Edit details
                   </button>
-                )}
+                  {p.releaseStatus !== 'published' && (
+                    <button type="button" onClick={() => void handleReleaseExisting(p)}
+                      className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-[#946000] text-white">
+                      Release Publicly
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

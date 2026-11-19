@@ -14,6 +14,7 @@ export function ProfileSettingsPage() {
   const [orcid, setOrcid] = useState(user?.orcid || '');
   const [country, setCountry] = useState(user?.country || '');
   const [bio, setBio] = useState(user?.bio || '');
+  const [publicProfileEnabled, setPublicProfileEnabled] = useState(Boolean(user?.publicProfileEnabled));
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export function ProfileSettingsPage() {
     setOrcid(user.orcid || '');
     setCountry(user.country || '');
     setBio(user.bio || '');
+    setPublicProfileEnabled(Boolean(user.publicProfileEnabled));
   }, [user]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -37,6 +39,7 @@ export function ProfileSettingsPage() {
         orcid: orcid.trim(),
         country: country.trim(),
         bio: bio.trim(),
+        publicProfileEnabled,
         updatedAt: new Date().toISOString(),
       });
       await refreshProfile();
@@ -147,6 +150,25 @@ export function ProfileSettingsPage() {
               onChange={(e) => setBio(e.target.value)}
               className="w-full px-3 py-2 text-sm rounded-lg border border-stone-300 dark:border-slate-700 bg-stone-50 dark:bg-slate-950"
             />
+          </div>
+
+          <div className="rounded-xl border border-[#D9B36A]/60 bg-[#FAF7F0] dark:bg-slate-950 p-4 space-y-3">
+            <h2 className="font-serif text-lg font-semibold">Public Author Profile</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Choose whether your name, biography, affiliation and ORCID will appear in the public Authors &amp; Researchers directory.
+              This setting does not change published-book attribution or share private manuscript information.
+            </p>
+            <label className="flex items-start gap-3 cursor-pointer text-sm">
+              <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[#946000]"
+                checked={publicProfileEnabled} onChange={(e) => setPublicProfileEnabled(e.target.checked)} />
+              <span className="font-medium">Make my author profile public</span>
+            </label>
+            {user?.publicProfileEnabled && (
+              <Link to={`/authors/${encodeURIComponent(user.uid)}`}
+                className="inline-flex text-sm font-semibold text-[#946000] dark:text-amber-400 hover:underline">
+                View my public profile →
+              </Link>
+            )}
           </div>
 
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">

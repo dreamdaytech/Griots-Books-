@@ -26,6 +26,7 @@ import {
   PolicyPage,
 } from './pages/public/InfoAndPolicyPages';
 import { AuthorsPage, JournalsPage } from './pages/public/JournalsAndAuthorsPages';
+import { AuthorDetailPage } from './pages/public/AuthorDetailPage';
 import { PublicationDetailPage } from './pages/public/PublicationDetailPage';
 import { PackagesPage, ServicesPage } from './pages/public/ServicesAndPackagesPages';
 
@@ -100,6 +101,7 @@ export default function App() {
               <Route path="/submit-research" element={<ServicesPage focus="submit-research" />} />
               <Route path="/journals" element={<JournalsPage />} />
               <Route path="/authors" element={<AuthorsPage />} />
+              <Route path="/authors/:uid" element={<AuthorDetailPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/guidelines" element={<GuidelinesPage />} />
               <Route path="/academic-guidelines" element={<GuidelinesPage academic />} />
